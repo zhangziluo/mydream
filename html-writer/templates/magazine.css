@@ -1,0 +1,65 @@
+/* =========================================================
+   magazine.css —— 模板：杂志风
+   衬线字体 + 居中大标题 + 首字下沉 + 仿古分隔线。
+   ========================================================= */
+
+body {
+  background: #faf6ef;
+  color: #211a12;
+  font-family: Georgia, "Times New Roman", "Songti SC", "STSong",
+               SimSun, serif;
+}
+
+article { max-width: 38rem; }
+
+p { text-align: justify; }
+
+h1, h2, h3 { font-weight: 600; }
+h1 {
+  font-size: 2.6em;
+  line-height: 1.2;
+  text-align: center;
+  margin-bottom: 0.4em;
+  letter-spacing: 0.02em;
+}
+h2 {
+  font-size: 1.5em;
+  text-align: center;
+  font-variant-caps: small-caps;
+  letter-spacing: 0.08em;
+}
+h3 { font-size: 1.15em; color: #7a5c3e; }
+
+a { color: #8a3b2e; text-decoration: underline; text-underline-offset: 2px; }
+
+/* 首字下沉 */
+article > p:first-of-type::first-letter {
+  float: left;
+  font-size: 3.4em;
+  line-height: 0.85;
+  padding: 0.04em 0.12em 0 0;
+  font-weight: 600;
+  color: #8a3b2e;
+}
+
+blockquote {
+  border: none;
+  background: none;
+  text-align: center;
+  font-style: italic;
+  color: #8a7355;
+  font-size: 1.12em;
+  padding: 0.5em 1em;
+  border-top: 1px solid #d8c9ae;
+  border-bottom: 1px solid #d8c9ae;
+}
+
+hr { border-top: 2px double #d8c9ae; width: 40%; }
+
+img { background: #fff; border: 1px solid #e2d3b8; padding: 0.35em; }
+
+code { background: #efe6d4; }
+pre { background: #fffdf8; border: 1px solid #e4d6bd; }
+
+th { background: #efe6d4; }
+th, td { border-color: #d8c9ae; }

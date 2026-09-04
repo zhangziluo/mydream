@@ -1,0 +1,106 @@
+/* =========================================================
+   dream.css —— 模板：梦（星夜蓝）
+   对应首页「梦」栏（.col--dream / --dream: #aecbff）。
+   配色取自首页天空渐变左段（#081226 → #102a55 → #1f4474 → #2b5b96）：
+   深蓝夜空 + 月光 + 星点，如铺展在星夜下阅读。
+   ========================================================= */
+
+html { min-height: 100%; }
+
+/* 夜空：主渐变 + 顶部冷月光晕 + 细碎星点。
+   背景 fixed 钉在视口（呼应首页 .sky 固定天空）；
+   不支持 fixed 的旧端自动退化为整页渐变，不影响阅读。 */
+body {
+  min-height: 100vh;
+  color: #eef3fb;
+  background-color: #081226;
+  background-image:
+    radial-gradient(circle at 50% -10%, rgba(207, 226, 255, 0.22), transparent 58%),
+    radial-gradient(circle at 18% 12%,  rgba(238, 243, 251, 0.9)  0, rgba(238, 243, 251, 0.9)  1.4px, transparent 2.2px),
+    radial-gradient(circle at 34% 6%,   rgba(238, 243, 251, 0.55) 0, rgba(238, 243, 251, 0.55) 1px,   transparent 1.9px),
+    radial-gradient(circle at 52% 18%,  rgba(238, 243, 251, 0.45) 0, rgba(238, 243, 251, 0.45) 1.5px, transparent 2.3px),
+    radial-gradient(circle at 68% 10%,  rgba(238, 243, 251, 0.65) 0, rgba(238, 243, 251, 0.65) 1px,   transparent 1.9px),
+    radial-gradient(circle at 84% 20%,  rgba(238, 243, 251, 0.5)  0, rgba(238, 243, 251, 0.5)  1.3px, transparent 2.1px),
+    radial-gradient(circle at 94% 6%,   rgba(238, 243, 251, 0.75) 0, rgba(238, 243, 251, 0.75) 1px,   transparent 1.9px),
+    radial-gradient(circle at 8% 34%,   rgba(238, 243, 251, 0.35) 0, rgba(238, 243, 251, 0.35) 1.1px, transparent 1.9px),
+    radial-gradient(circle at 26% 46%,  rgba(238, 243, 251, 0.3)  0, rgba(238, 243, 251, 0.3)  1.4px, transparent 2.2px),
+    radial-gradient(circle at 44% 38%,  rgba(238, 243, 251, 0.4)  0, rgba(238, 243, 251, 0.4)  1px,   transparent 1.8px),
+    radial-gradient(circle at 62% 52%,  rgba(238, 243, 251, 0.28) 0, rgba(238, 243, 251, 0.28) 1.2px, transparent 2px),
+    radial-gradient(circle at 76% 36%,  rgba(238, 243, 251, 0.35) 0, rgba(238, 243, 251, 0.35) 1px,   transparent 1.8px),
+    radial-gradient(circle at 88% 50%,  rgba(238, 243, 251, 0.4)  0, rgba(238, 243, 251, 0.4)  1.2px, transparent 2px),
+    radial-gradient(circle at 18% 66%,  rgba(238, 243, 251, 0.28) 0, rgba(238, 243, 251, 0.28) 1px,   transparent 1.9px),
+    radial-gradient(circle at 40% 76%,  rgba(238, 243, 251, 0.22) 0, rgba(238, 243, 251, 0.22) 1.4px, transparent 2.2px),
+    radial-gradient(circle at 58% 82%,  rgba(238, 243, 251, 0.2)  0, rgba(238, 243, 251, 0.2)  1px,   transparent 1.9px),
+    radial-gradient(circle at 74% 64%,  rgba(238, 243, 251, 0.3)  0, rgba(238, 243, 251, 0.3)  1.2px, transparent 2px),
+    radial-gradient(circle at 90% 80%,  rgba(238, 243, 251, 0.25) 0, rgba(238, 243, 251, 0.25) 1px,   transparent 1.8px),
+    linear-gradient(180deg, #081226 0%, #102a55 34%, #1f4474 68%, #2b5b96 100%);
+  background-attachment: fixed;
+}
+
+/* 顶部色标细线：呼应首页 .col::before 的栏顶渐变线 */
+article { position: relative; max-width: 40rem; }
+article::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(72%, 26rem);
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, transparent, rgba(174, 203, 255, 0.75), transparent);
+}
+
+/* 标题：衬线宋体，延续首页 hero 气质 */
+h1, h2, h3, h4 {
+  font-family: "Songti SC", "STSong", "Noto Serif CJK SC",
+               "Source Han Serif SC", "SimSun", Georgia, serif;
+  font-weight: 600;
+  color: #f2f6fd;
+}
+h1 {
+  margin-top: 0;
+  text-align: center;
+  font-size: 2.2em;
+  letter-spacing: 0.08em;
+  text-indent: 0.08em;
+  text-shadow: 0 2px 26px rgba(174, 203, 255, 0.3);
+}
+h2 {
+  margin-top: 2.1em;
+  font-size: 1.5em;
+  letter-spacing: 0.05em;
+  text-indent: 0.05em;
+}
+h3 { color: #c8d8f6; font-size: 1.18em; }
+
+a {
+  color: #aecbff;
+  text-underline-offset: 3px;
+  text-decoration-color: rgba(174, 203, 255, 0.4);
+}
+a:hover { text-decoration-color: #aecbff; }
+
+hr { border-top-color: rgba(174, 203, 255, 0.3); }
+
+blockquote {
+  background: rgba(174, 203, 255, 0.07);
+  border-left-color: rgba(174, 203, 255, 0.5);
+  border-radius: 0 10px 10px 0;
+  color: rgba(238, 243, 251, 0.85);
+}
+
+code { background: rgba(174, 203, 255, 0.14); color: #dbe9ff; }
+pre {
+  background: rgba(5, 13, 32, 0.62);
+  border-color: rgba(174, 203, 255, 0.2);
+}
+pre code { color: #e9effb; background: none; }
+
+mark { background: rgba(255, 226, 150, 0.28); color: #ffe9b0; }
+del { color: rgba(238, 243, 251, 0.45); }
+
+th { background: rgba(174, 203, 255, 0.14); color: #dce9ff; }
+th, td { border-color: rgba(174, 203, 255, 0.22); }
+
+::selection { background: rgba(174, 203, 255, 0.32); }

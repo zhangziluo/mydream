@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>写作工具 · Markdown</title>
+
+<link rel="stylesheet" href="style.css">
+
+<!--
+  marked：唯一的 CDN 依赖（Markdown → HTML）。
+  注意：锁定 4.3.0 —— 该版本在 npm 包根目录提供 marked.min.js（UMD，
+  挂载 window.marked）；marked 新版已移除根目录文件，裸地址会 404。
+  如无法访问 jsDelivr，可换成任意 marked 4.x 的镜像源。
+-->
+<script src="https://cdn.jsdelivr.net/npm/marked@4.3.0/marked.min.js" defer></script>
+<script src="app.js" defer></script>
+</head>
+<body>
+
+<!-- ================= 密码登录遮罩 ================= -->
+<div id="authOverlay">
+  <form class="auth-card" id="authForm" autocomplete="off">
+    <div class="auth-icon">✎</div>
+    <h1>写作工具</h1>
+    <p>请输入访问密码</p>
+    <input type="password" id="authInput" placeholder="密码" autocomplete="current-password">
+    <button type="submit">进入</button>
+    <div id="authError"></div>
+  </form>
+</div>
+
+<!-- ================= 主应用（解锁后显示） ================= -->
+<div id="app" class="hidden">
+
+  <header class="topbar">
+    <div class="brand"><span class="brand-name">写作工具</span></div>
+    <div class="spacer"></div>
+
+    <label class="tpl-label" for="tplSelect">模板</label>
+    <select id="tplSelect" title="切换预览模板">
+      <option value="minimal">极简</option>
+      <option value="magazine">杂志风</option>
+      <option value="code">代码风</option>
+      <option value="dream">梦</option>
+      <option value="murmur">梦呓</option>
+      <option value="wake">醒</option>
+    </select>
+
+    <button type="button" id="mobileToggle" class="btn">👁 预览</button>
+    <button type="button" id="exportBtn" class="btn primary">⬇ 导出 HTML</button>
+  </header>
+
+  <main class="workspace">
+
+    <!-- 左侧：编辑器 -->
+    <section class="pane editorPane">
+      <div class="pane-tools" id="toolbar">
+        <button class="tool-btn" data-cmd="undo" title="撤销" type="button">↺</button>
+        <span class="tool-sep"></span>
+        <button class="tool-btn" data-cmd="h1" title="一级标题" type="button">H1</button>
+        <button class="tool-btn" data-cmd="h2" title="二级标题" type="button">H2</button>
+        <span class="tool-sep"></span>
+        <button class="tool-btn" data-cmd="bold" title="加粗" type="button"><b>B</b></button>
+        <button class="tool-btn" data-cmd="italic" title="斜体" type="button"><i>I</i></button>
+        <button class="tool-btn" data-cmd="strike" title="删除线" type="button"><s>S</s></button>
+        <span class="tool-sep"></span>
+        <button class="tool-btn" data-cmd="quote" title="引用" type="button">❝ 引用</button>
+        <button class="tool-btn" data-cmd="ul" title="无序列表" type="button">• 列表</button>
+        <button class="tool-btn" data-cmd="ol" title="有序列表" type="button">1. 列表</button>
+        <span class="tool-sep"></span>
+        <button class="tool-btn" data-cmd="code" title="行内代码" type="button">&lt;/&gt;</button>
+        <button class="tool-btn" data-cmd="pre" title="代码块" type="button">代码块</button>
+        <span class="tool-sep"></span>
+        <button class="tool-btn" data-cmd="link" title="插入链接" type="button">🔗 链接</button>
+        <button class="tool-btn" data-cmd="image" title="插入图片" type="button">🖼 图片</button>
+        <button class="tool-btn" data-cmd="hr" title="分割线" type="button">───</button>
+        <span id="wordCount">0 字</span>
+      </div>
+      <textarea id="editor" spellcheck="false" placeholder="在这里写 Markdown…"></textarea>
+    </section>
+
+    <!-- 右侧：实时预览（沙箱 iframe，样式与导出文件一致） -->
+    <section class="pane previewPane">
+      <div class="pane-head">
+        <span>预览</span>
+        <span id="previewHint"></span>
+      </div>
+      <iframe id="previewFrame" title="实时预览" sandbox="allow-same-origin"></iframe>
+    </section>
+
+  </main>
+</div>
+
+<div id="toast" class="toast"></div>
+
+</body>
+</html>

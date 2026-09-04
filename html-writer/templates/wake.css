@@ -1,0 +1,85 @@
+/* =========================================================
+   wake.css —— 模板：醒（晨光 · 向日葵暖）
+   对应首页「醒」栏（.col--wake / --wake: #ffd98a）。
+   天亮后的暖纸感：奶油底 + 顶部向日葵光晕，
+   取色自首页天空渐变右段（#c0803f → #f2c457）与 .col--wake。
+   ========================================================= */
+
+html { min-height: 100%; }
+
+body {
+  min-height: 100vh;
+  color: #4a2f12;
+  background-color: #fff6de;
+  background-image:
+    radial-gradient(circle at 50% -14%, rgba(255, 226, 150, 0.9), transparent 58%),
+    linear-gradient(180deg, #fff8e6 0%, #ffeec3 40%, #ffdf9e 72%, #f6c96b 100%);
+  background-attachment: fixed;
+}
+
+/* 顶部色标细线：呼应首页 .col::before 的栏顶渐变线 */
+article { position: relative; max-width: 42rem; }
+article::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(72%, 26rem);
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, transparent, rgba(212, 143, 30, 0.75), transparent);
+}
+
+/* 标题：衬线宋体，晨光下读的字 */
+h1, h2, h3, h4 {
+  font-family: "Songti SC", "STSong", "Noto Serif CJK SC",
+               "Source Han Serif SC", "SimSun", Georgia, serif;
+  font-weight: 600;
+  color: #3c2406;
+}
+h1 {
+  margin-top: 0;
+  text-align: center;
+  font-size: 2.2em;
+  letter-spacing: 0.08em;
+  text-indent: 0.08em;
+}
+h2 {
+  margin-top: 2.1em;
+  font-size: 1.5em;
+  letter-spacing: 0.05em;
+  text-indent: 0.05em;
+}
+h3 { color: #8a5a17; font-size: 1.18em; }
+
+a {
+  color: #8a4b0b;
+  text-underline-offset: 3px;
+  text-decoration-color: rgba(138, 75, 11, 0.4);
+}
+a:hover { text-decoration-color: #8a4b0b; }
+
+hr { border-top-color: rgba(170, 110, 30, 0.35); }
+
+blockquote {
+  background: rgba(255, 255, 255, 0.55);
+  border-left: 3px solid rgba(212, 143, 30, 0.6);
+  border-radius: 0 10px 10px 0;
+  color: #6b4a1e;
+}
+
+code { background: rgba(196, 124, 20, 0.12); color: #7a3d08; }
+pre {
+  background: rgba(255, 255, 255, 0.6);
+  border-color: rgba(196, 124, 20, 0.3);
+}
+pre code { color: #6b4520; background: none; }
+
+mark { background: #ffe08a; color: #4a2f12; }
+del { color: rgba(74, 47, 18, 0.5); }
+
+th { background: rgba(196, 124, 20, 0.12); color: #6b4510; }
+th, td { border-color: rgba(196, 124, 20, 0.28); }
+
+::selection { background: rgba(255, 184, 64, 0.4); }

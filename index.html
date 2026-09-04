@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>梦 · 梦呓 · 醒</title>
+<meta name="description" content="一个文学创作的个人主页：梦、梦呓、醒。">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+
+<!-- ============ 背景：星月夜(蓝) → 向日葵(暖) ============ -->
+<div class="sky" aria-hidden="true">
+  <svg class="paint" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <!-- 横向主渐变：左蓝右暖，右侧落在「醒」 -->
+      <linearGradient id="skyGrad" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0"    stop-color="#0a1834"/>
+        <stop offset="0.3"  stop-color="#16345f"/>
+        <stop offset="0.55" stop-color="#2b5b96"/>
+        <stop offset="0.7"  stop-color="#7a6472"/>
+        <stop offset="0.85" stop-color="#c98a4b"/>
+        <stop offset="1"    stop-color="#f2c457"/>
+      </linearGradient>
+      <!-- 印象派笔触：fractalNoise + 位移扭曲 -->
+      <filter id="brush" x="-10%" y="-10%" width="120%" height="120%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.0068 0.0136"
+                      numOctaves="3" seed="9" result="n"/>
+        <feDisplacementMap in="SourceGraphic" in2="n" scale="58"
+                           xChannelSelector="R" yChannelSelector="G"/>
+      </filter>
+      <!-- 月亮冷光 -->
+      <radialGradient id="moonGlow" cx="50%" cy="50%" r="50%">
+        <stop offset="0%"   stop-color="#eaf4ff" stop-opacity="0.85"/>
+        <stop offset="45%"  stop-color="#cfe0ff" stop-opacity="0.26"/>
+        <stop offset="100%" stop-color="#cfe0ff" stop-opacity="0"/>
+      </radialGradient>
+      <!-- 向日葵暖光 -->
+      <radialGradient id="warmGlow" cx="50%" cy="50%" r="50%">
+        <stop offset="0%"   stop-color="#ffe2a0" stop-opacity="0.5"/>
+        <stop offset="55%"  stop-color="#e8a23d" stop-opacity="0.18"/>
+        <stop offset="100%" stop-color="#e8a23d" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+
+    <!-- 被笔触扭曲的整幅色底 + 旋涡云 -->
+    <g filter="url(#brush)">
+      <rect x="-160" y="-160" width="1920" height="1320" fill="url(#skyGrad)"/>
+      <g fill="none" stroke-linecap="round">
+        <!-- 中部大旋涡 -->
+        <path d="M360 250 C 410 120, 610 100, 650 205 C 685 300, 565 390, 455 370
+                 C 350 350, 335 250, 410 220 C 465 198, 525 245, 485 295"
+              stroke="#cfe2ff" stroke-opacity="0.28" stroke-width="30"/>
+        <!-- 左侧旋流 -->
+        <path d="M150 60 C 70 130, 120 250, 225 260 C 330 270, 345 150, 265 100"
+              stroke="#bcd6ff" stroke-opacity="0.2" stroke-width="22"/>
+        <!-- 右中偏冷细旋 -->
+        <path d="M930 120 C 1000 60, 1120 95, 1120 185 C 1120 290, 1010 330, 930 280
+                 C 860 235, 900 150, 975 155"
+              stroke="#dce9ff" stroke-opacity="0.2" stroke-width="26"/>
+        <!-- 下方小旋 -->
+        <path d="M700 470 C 740 420, 830 430, 840 485 C 850 545, 790 575, 745 545"
+              stroke="#c9dcff" stroke-opacity="0.15" stroke-width="16"/>
+        <!-- 右下暖旋（过渡到向日葵） -->
+        <path d="M1280 300 C 1340 250, 1450 270, 1465 335 C 1480 405, 1400 445, 1340 410"
+              stroke="#ffe3ae" stroke-opacity="0.2" stroke-width="18"/>
+      </g>
+    </g>
+
+    <!-- 月与冷光 -->
+    <circle class="moon-halo" cx="235" cy="180" r="150" fill="url(#moonGlow)"/>
+    <circle cx="235" cy="180" r="30" fill="#eef7ff" opacity="0.9"/>
+    <circle cx="252" cy="168" r="9" fill="#ffffff" opacity="0.7"/>
+    <!-- 向日葵暖光 + 花盘（右缘，星夜过渡到暖色） -->
+    <circle cx="1380" cy="640" r="440" fill="url(#warmGlow)"/>
+    <g transform="translate(1470,600)" opacity="0.6">
+      <circle r="56" fill="#e8a23d" opacity="0.4"/>
+      <circle r="34" fill="#24150a" opacity="0.55"/>
+      <g stroke="#ffd887" stroke-width="17" stroke-linecap="round" fill="none" opacity="0.6">
+        <path d="M58 0 L132 0"/>
+        <path d="M41 41 L93 93"/>
+        <path d="M0 58 L0 132"/>
+        <path d="M-41 41 L-93 93"/>
+        <path d="M-58 0 L-132 0"/>
+        <path d="M-41 -41 L-93 -93"/>
+        <path d="M0 -58 L0 -132"/>
+        <path d="M41 -41 L93 -93"/>
+      </g>
+    </g>
+
+    <!-- 星点（CSS 动画闪烁） -->
+    <g class="stars">
+      <circle class="star" cx="96"  cy="90"  r="2.1" fill="#fff"   style="animation-delay:-0.3s"/>
+      <circle class="star" cx="180" cy="300" r="1.5" fill="#fff"   style="animation-delay:-1.1s"/>
+      <circle class="star" cx="330" cy="80"  r="1.9" fill="#e6f0ff" style="animation-delay:-2.4s"/>
+      <circle class="star" cx="430" cy="210" r="1.3" fill="#fff"   style="animation-delay:-0.7s"/>
+      <circle class="star" cx="545" cy="70"  r="2.4" fill="#fff"   style="animation-delay:-1.9s"/>
+      <circle class="star" cx="640" cy="250" r="1.5" fill="#dbe8ff" style="animation-delay:-2.9s"/>
+      <circle class="star" cx="760" cy="110" r="2"   fill="#fff"   style="animation-delay:-0.5s"/>
+      <circle class="star" cx="870" cy="320" r="1.4" fill="#fff"   style="animation-delay:-1.6s"/>
+      <circle class="star" cx="990" cy="80"  r="2.2" fill="#e6f0ff" style="animation-delay:-2.1s"/>
+      <circle class="star" cx="1100" cy="200" r="1.6" fill="#fff"  style="animation-delay:-0.9s"/>
+      <circle class="star" cx="1210" cy="60" r="1.9" fill="#fff"   style="animation-delay:-2.6s"/>
+      <circle class="star" cx="1330" cy="170" r="1.4" fill="#ffe9b0" style="animation-delay:-1.4s"/>
+      <circle class="star" cx="1450" cy="90" r="2"   fill="#ffe9b0" style="animation-delay:-0.2s"/>
+      <circle class="star" cx="1540" cy="230" r="1.5" fill="#fff"  style="animation-delay:-3.1s"/>
+      <circle class="star" cx="150"  cy="480" r="1.4" fill="#fff"  style="animation-delay:-2.2s"/>
+      <circle class="star" cx="320"  cy="560" r="1.1" fill="#fff"  style="animation-delay:-0.6s"/>
+      <circle class="star" cx="560"  cy="470" r="1.6" fill="#dbe8ff" style="animation-delay:-1.8s"/>
+      <circle class="star" cx="760"  cy="560" r="1.2" fill="#fff"  style="animation-delay:-2.8s"/>
+      <circle class="star" cx="1000" cy="470" r="1.5" fill="#fff"  style="animation-delay:-0.4s"/>
+      <circle class="star" cx="1180" cy="380" r="1.3" fill="#ffe9b0" style="animation-delay:-3.3s"/>
+      <circle class="star" cx="1520" cy="420" r="1.6" fill="#ffe9b0" style="animation-delay:-1s"/>
+    </g>
+  </svg>
+  <div class="veil"></div>
+</div>
+
+<!-- ============ 页面内容 ============ -->
+<div class="page">
+
+  <header class="hero">
+    <h1>梦 · 梦呓 · 醒</h1>
+    <p class="hero-sub">写梦 · 写梦呓 · 写醒来的时刻</p>
+    <nav class="hero-nav" aria-label="专栏导航">
+      <a href="#col-dream">梦</a>
+      <a href="#col-murmur">梦呓</a>
+      <a href="#col-wake">醒</a>
+    </nav>
+  </header>
+  <main class="columns">
+
+    <!-- 梦 -->
+    <section class="col col--dream" id="col-dream" aria-labelledby="t-dream">
+      <h2 id="t-dream">梦</h2>
+      <p class="motto">梦，是夜把未说完的话，折成羽翼。</p>
+      <ul class="works" data-works="dream">
+        <li>
+          <a class="work" href="dream/%E8%9C%95%20(1).html" target="_blank" rel="noopener">
+            <span class="w-info">
+              <span class="w-title">《蜕》</span>
+              <span class="w-note">天刚破出一点灰光。树林的湿气贴在皮肤上，冷得发黏。她刚从混乱里跑出来。身后远处，监狱的嘈杂渐渐沉下去，只剩零星的喊叫，被山林隔得很远，模糊不清。她扶着树干站稳，喉咙干涩，想要出声。她要呼救。要解释。要说出那一句她反复说…</span>
+            </span>
+            <span class="w-badge">html</span>
+            <span class="w-go" aria-hidden="true">→</span>
+          </a>
+        </li>
+      </ul>
+    </section>
+
+    <!-- 梦呓 -->
+    <section class="col col--murmur" id="col-murmur" aria-labelledby="t-murmur">
+      <h2 id="t-murmur">梦呓</h2>
+      <p class="motto">半醒半睡之间，字句浮出水面。</p>
+      <ul class="works" data-works="murmur">
+      <li class="empty">静候文字落笔……</li>
+      </ul>
+    </section>
+
+    <!-- 醒 -->
+    <section class="col col--wake" id="col-wake" aria-labelledby="t-wake">
+      <h2 id="t-wake">醒</h2>
+      <p class="motto">天亮以后，向日葵替我说话。</p>
+      <ul class="works" data-works="wake">
+      <li class="empty">静候文字落笔……</li>
+      </ul>
+    </section>
+
+  </main>
+
+  <footer class="page-footer">
+    <p>© <span id="year">2026</span> · Mydream · 梦，是夜的另一种语言</p>
+    <p><a class="os-entry" href="web-os/index.html" target="_blank" rel="noopener">Dream&nbsp;OS</a></p>
+  </footer>
+
+</div>
+
+<script src="assets/main.js"></script>
+</body>
+</html>
+
+

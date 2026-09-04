@@ -1,0 +1,294 @@
+/* style.css —— 工具页面本身的界面样式（编辑器外壳）
+   注：文章预览/导出的排版样式在 preview.css + templates/*.css */
+
+:root {
+  --border:       #e3e6ea;
+  --bg:           #f4f5f7;
+  --panel:        #fff;
+  --text:         #1f2328;
+  --muted:        #6b7280;
+  --accent:       #2563eb;
+  --accent-hover: #1d4ed8;
+  --radius:       8px;
+}
+
+* { box-sizing: border-box; }
+
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+               "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-size: 14px;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+button { font-family: inherit; }
+.hidden { display: none !important; }
+
+/* ---------- 登录遮罩 ---------- */
+#authOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(160deg, #111827, #1e3a5f);
+}
+
+.auth-card {
+  width: 320px;
+  max-width: calc(100vw - 40px);
+  background: #fff;
+  border-radius: 16px;
+  padding: 32px 28px 24px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+  text-align: center;
+}
+
+.auth-icon {
+  width: 52px;
+  height: 52px;
+  margin: 0 auto 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #eef2ff;
+  color: var(--accent);
+  font-size: 26px;
+  border-radius: 50%;
+}
+
+.auth-card h1 { margin: 4px 0 2px; font-size: 19px; }
+.auth-card p { margin: 0 0 18px; color: var(--muted); font-size: 13px; }
+
+.auth-card input[type="password"] {
+  width: 100%;
+  padding: 11px 12px;
+  font-size: 15px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  outline: none;
+}
+.auth-card input[type="password"]:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.auth-card button {
+  width: 100%;
+  margin-top: 12px;
+  padding: 10px;
+  font-size: 15px;
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+}
+.auth-card button:hover { background: var(--accent-hover); }
+
+#authError {
+  min-height: 18px;
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--danger);
+}
+.auth-card.shake { animation: shake 0.35s; }
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25%      { transform: translateX(-7px); }
+  75%      { transform: translateX(7px); }
+}
+
+/* ---------- 应用骨架 ---------- */
+#app {
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar {
+  flex: none;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.brand::before { content: "✍"; }
+
+.spacer { flex: 1; }
+
+.tpl-label { color: var(--muted); font-size: 12px; white-space: nowrap; }
+
+#tplSelect {
+  height: 30px;
+  padding: 0 26px 0 10px;
+  font-size: 13px;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  outline: none;
+  cursor: pointer;
+}
+
+.btn {
+  height: 32px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel);
+  color: var(--text);
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.btn:hover { background: #f0f2f5; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn.primary:hover { background: var(--accent-hover); }
+
+/* 移动端「预览 / 编辑」切换按钮：默认隐藏，仅手机上显示 */
+#mobileToggle { display: none; }
+
+/* ---------- 工作区 ---------- */
+.workspace { flex: 1; display: flex; min-height: 0; }
+
+.pane {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  background: var(--panel);
+}
+.editorPane  { flex: 1 1 50%; border-right: 1px solid var(--border); }
+.previewPane { flex: 1 1 50%; }
+
+/* 编辑器工具栏 */
+.pane-tools {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+  background: #fbfbfc;
+}
+.tool-btn {
+  height: 28px;
+  min-width: 28px;
+  padding: 0 8px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  font-size: 13px;
+  line-height: 1;
+  color: #374151;
+  cursor: pointer;
+}
+.tool-btn:hover { background: #eceef1; border-color: var(--border); }
+.tool-btn:disabled { opacity: 0.35; cursor: default; }
+.tool-btn b { font-weight: 700; }
+.tool-btn i { font-style: italic; font-family: Georgia, serif; }
+.tool-btn s { text-decoration: line-through; }
+.tool-sep { width: 1px; height: 16px; background: var(--border); margin: 0 3px; }
+#wordCount {
+  margin-left: auto;
+  padding: 0 6px;
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+/* 编辑器输入区 */
+#editor {
+  flex: 1;
+  width: 100%;
+  padding: 16px 20px;
+  border: 0;
+  outline: none;
+  resize: none;
+  background: #fff;
+  color: #24292f;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13.5px;
+  line-height: 1.75;
+  tab-size: 2;
+}
+
+/* 预览面板 */
+.pane-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px 12px;
+  font-size: 12px;
+  color: var(--muted);
+  background: #fbfbfc;
+  border-bottom: 1px solid var(--border);
+}
+#previewFrame {
+  flex: 1;
+  width: 100%;
+  border: 0;
+  background: #fff;
+}
+
+/* 提示条 */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 26px;
+  transform: translate(-50%, 16px);
+  z-index: 200;
+  padding: 9px 18px;
+  border-radius: 999px;
+  background: rgba(17, 24, 39, 0.92);
+  color: #fff;
+  font-size: 13px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s, transform 0.25s;
+}
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+/* ---------- 移动端适配 ---------- */
+@media (max-width: 820px) {
+  .topbar { padding: 0 8px; gap: 6px; }
+  .brand-name { display: none; }
+  .tpl-label { display: none; }
+  #tplSelect { max-width: 92px; }
+  #mobileToggle { display: inline-flex; }
+
+  /* 手机默认只显示编辑区 */
+  .editorPane { flex: 1 1 100%; border-right: 0; }
+  .previewPane { display: none; }
+
+  /* 点「预览」切到预览，点「编辑」切回 */
+  #app.show-preview .editorPane { display: none; }
+  #app.show-preview .previewPane { display: flex; flex: 1 1 100%; }
+
+  #wordCount { display: none; }
+}

@@ -1,0 +1,18 @@
+{
+  "name": "Mydream OS · 梦之桌面",
+  "short_name": "梦OS",
+  "description": "深蓝→晨曦→亮黄渐变体系的网页版桌面：可拖拽图标、iframe 应用窗口、任务栏，以及时钟 / 天气 / 待办挂件。",
+  "lang": "zh-CN",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0a1834",
+  "theme_color": "#0a1834",
+  "icons": [
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

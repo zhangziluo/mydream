@@ -1,0 +1,41 @@
+/* =========================================================
+   code.css —— 模板：代码/技术风
+   深色背景 + 等宽字体 + GitHub Dark 配色点缀。
+   ========================================================= */
+
+body {
+  background: #0d1117;
+  color: #c9d1d9;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+               "Liberation Mono", "Courier New", monospace;
+  font-size: 15px;
+  line-height: 1.75;
+}
+
+article { max-width: 52rem; }
+
+h1, h2, h3, h4 { color: #e6edf3; font-weight: 600; }
+h1 { font-size: 1.9em; padding-bottom: 0.4em; border-bottom: 1px solid #30363d; }
+h2 { font-size: 1.35em; margin-top: 2em; padding-bottom: 0.3em; border-bottom: 1px dashed #30363d; }
+h3 { color: #79c0ff; }
+
+a { color: #58a6ff; text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+::selection { background: rgba(56, 139, 253, 0.4); }
+
+code { color: #ffa657; background: rgba(110, 118, 129, 0.16); }
+pre { background: #161b22; border: 1px solid #30363d; }
+pre code { color: #e6edf3; }
+
+blockquote {
+  border-left-color: #30363d;
+  background: transparent;
+  color: #8b949e;
+}
+
+th { background: #161b22; color: #79c0ff; }
+th, td { border-color: #30363d; }
+
+hr { border-top-color: #30363d; }
+mark { background: #e3b341; color: #0d1117; }

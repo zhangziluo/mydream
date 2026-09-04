@@ -1,0 +1,95 @@
+/* =========================================================
+   preview.css —— 预览区 / 导出文件共用的基础排版
+   作用于内容 <article>；模板在 templates/*.css 中做差异化覆盖。
+   注意：app.js 里内置了一份相同副本（file:// 直开导出时用）。
+   ========================================================= */
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  color: #2b2f36;
+  background: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+               "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC",
+               sans-serif;
+  font-size: 16px;
+  line-height: 1.8;
+  word-break: break-word;
+  -webkit-font-smoothing: antialiased;
+}
+
+article {
+  max-width: 46rem;
+  margin: 0 auto;
+  padding: 3rem 1.6rem 6rem;
+}
+
+/* ---- 标题 ---- */
+h1, h2, h3, h4, h5 {
+  font-weight: 700;
+  line-height: 1.35;
+  margin: 1.6em 0 0.55em;
+}
+h1 { font-size: 2.05em; margin-top: 0; }
+h2 { font-size: 1.5em; }
+h3 { font-size: 1.2em; }
+
+/* ---- 正文元素 ---- */
+p  { margin: 0 0 1em; }
+a  { color: #0b66d9; text-decoration: none; }
+a:hover { text-decoration: underline; }
+img { max-width: 100%; height: auto; }
+hr  { border: 0; border-top: 1px solid #e5e7eb; margin: 2.2em auto; }
+
+blockquote {
+  margin: 1.2em 0;
+  padding: 0.15em 1.1em;
+  border-left: 4px solid #d1d5db;
+  color: #6b7280;
+  background: #fafafa;
+}
+blockquote p { margin: 0.6em 0; }
+
+ul, ol { margin: 0 0 1.1em; padding-left: 1.7em; }
+li { margin: 0.28em 0; }
+li > ul, li > ol { margin-bottom: 0; }
+
+/* ---- 代码 ---- */
+code {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+               "Liberation Mono", "Courier New", monospace;
+  font-size: 0.9em;
+  background: #f1f3f5;
+  padding: 0.12em 0.4em;
+  border-radius: 4px;
+}
+pre {
+  margin: 1.1em 0;
+  padding: 1em 1.2em;
+  background: #f6f8fa;
+  border: 1px solid #eaecef;
+  border-radius: 8px;
+  overflow: auto;
+}
+pre code { background: none; padding: 0; font-size: 0.92em; line-height: 1.65; }
+
+/* ---- 表格 ---- */
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1.1em 0;
+  display: block;
+  overflow-x: auto;
+}
+th, td { border: 1px solid #dde1e6; padding: 0.5em 0.85em; text-align: left; }
+th { background: #f6f8fa; font-weight: 600; }
+
+mark { background: #fff3a3; padding: 0 0.15em; }
+del { color: #9aa1a9; }
+
+@media (max-width: 720px) {
+  article { padding: 1.4rem 1.1rem 4rem; }
+  h1 { font-size: 1.7em; }
+}

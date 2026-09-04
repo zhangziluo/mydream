@@ -1,0 +1,99 @@
+/* =========================================================
+   murmur.css —— 模板：梦呓（暮色紫灰）
+   对应首页「梦呓」栏（.col--murmur / --murmur: #d9e4ff）。
+   夜与晨之间的暮色：青蓝渐沉 → 紫灰 → 昏褐，
+   取色自首页天空渐变中段（#1f4474 → #6a5d74 → #7a6459）。
+   ========================================================= */
+
+html { min-height: 100%; }
+
+body {
+  min-height: 100vh;
+  color: #eef0f8;
+  background-color: #1a2c52;
+  background-image:
+    radial-gradient(circle at 50% -12%, rgba(217, 228, 255, 0.16), transparent 55%),
+    radial-gradient(circle at 24% 12%, rgba(238, 240, 248, 0.5) 0, rgba(238, 240, 248, 0.5) 1px, transparent 1.9px),
+    radial-gradient(circle at 52% 20%, rgba(238, 240, 248, 0.3) 0, rgba(238, 240, 248, 0.3) 1.3px, transparent 2.1px),
+    radial-gradient(circle at 78% 10%, rgba(238, 240, 248, 0.45) 0, rgba(238, 240, 248, 0.45) 1px, transparent 1.9px),
+    radial-gradient(circle at 90% 30%, rgba(238, 240, 248, 0.28) 0, rgba(238, 240, 248, 0.28) 1.1px, transparent 1.9px),
+    radial-gradient(circle at 14% 44%, rgba(238, 240, 248, 0.25) 0, rgba(238, 240, 248, 0.25) 1px, transparent 1.8px),
+    radial-gradient(circle at 38% 56%, rgba(238, 240, 248, 0.2) 0, rgba(238, 240, 248, 0.2) 1.4px, transparent 2.2px),
+    radial-gradient(circle at 64% 68%, rgba(238, 240, 248, 0.18) 0, rgba(238, 240, 248, 0.18) 1px, transparent 1.8px),
+    radial-gradient(circle at 84% 56%, rgba(238, 240, 248, 0.25) 0, rgba(238, 240, 248, 0.25) 1.2px, transparent 2px),
+    radial-gradient(circle at 94% 80%, rgba(238, 240, 248, 0.16) 0, rgba(238, 240, 248, 0.16) 1px, transparent 1.9px),
+    linear-gradient(180deg, #1a2c52 0%, #31406b 26%, #4d4a70 52%, #6a5d74 74%, #7a6459 100%);
+  background-attachment: fixed;
+}
+
+/* 顶部色标细线：呼应首页 .col::before 的栏顶渐变线 */
+article { position: relative; max-width: 40rem; }
+article::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(72%, 26rem);
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, transparent, rgba(217, 228, 255, 0.7), transparent);
+}
+
+/* 标题：衬线宋体；梦呓——字句浮在半醒半睡之间 */
+h1, h2, h3, h4 {
+  font-family: "Songti SC", "STSong", "Noto Serif CJK SC",
+               "Source Han Serif SC", "SimSun", Georgia, serif;
+  font-weight: 600;
+  color: #f4f3fa;
+}
+h1 {
+  margin-top: 0;
+  text-align: center;
+  font-size: 2.2em;
+  letter-spacing: 0.1em;
+  text-indent: 0.1em;
+  text-shadow: 0 2px 24px rgba(217, 228, 255, 0.22);
+}
+h2 {
+  margin-top: 2.1em;
+  font-size: 1.5em;
+  letter-spacing: 0.05em;
+  text-indent: 0.05em;
+}
+h3 { color: #c9d2ee; font-size: 1.18em; }
+
+a {
+  color: #d9e4ff;
+  text-underline-offset: 3px;
+  text-decoration-color: rgba(217, 228, 255, 0.4);
+}
+a:hover { text-decoration-color: #d9e4ff; }
+
+hr { border-top-color: rgba(217, 228, 255, 0.3); }
+
+/* 呓语：居中斜体 + 上下细线，像浮出水面的话 */
+blockquote {
+  border-left: none;
+  border-top: 1px solid rgba(217, 228, 255, 0.3);
+  border-bottom: 1px solid rgba(217, 228, 255, 0.3);
+  background: rgba(217, 228, 255, 0.06);
+  text-align: center;
+  font-style: italic;
+  color: rgba(238, 240, 248, 0.86);
+}
+
+code { background: rgba(217, 228, 255, 0.13); color: #e3eaff; }
+pre {
+  background: rgba(12, 19, 40, 0.6);
+  border-color: rgba(217, 228, 255, 0.2);
+}
+pre code { color: #eceefb; background: none; }
+
+mark { background: rgba(255, 226, 150, 0.26); color: #ffe9b0; }
+del { color: rgba(238, 240, 248, 0.45); }
+
+th { background: rgba(217, 228, 255, 0.13); color: #e2e9ff; }
+th, td { border-color: rgba(217, 228, 255, 0.22); }
+
+::selection { background: rgba(217, 228, 255, 0.3); }
