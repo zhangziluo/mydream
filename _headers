@@ -1,0 +1,21 @@
+# =========================================================
+# Cloudflare Pages 自定义响应头
+# 注意：需位于「发布根目录」。若 CF 输出目录为 /（推荐），
+# 本文件即在仓库根即可随部署生效。
+# =========================================================
+
+# Service Worker 不缓存：升级 sw.js 后能立即让浏览器拿到新版
+web-os/sw.js
+  Cache-Control: no-cache
+
+# PWA manifest 正确 MIME + 不缓存
+web-os/manifest.webmanifest
+  Content-Type: application/manifest+json
+  Cache-Control: no-cache
+
+# 首页不缓存（避免作品卡片更新后看到旧页面）
+index.html
+  Cache-Control: no-cache
+
+/
+  Cache-Control: no-cache
