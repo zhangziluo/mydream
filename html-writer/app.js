@@ -18,7 +18,7 @@
 
 /* ---------------- 1. 配置（可自行修改） ---------------- */
 
-const PASSWORD = '2026';      // ← 访问密码，改这里即可
+const PASSWORD = '19930214';      // ← 访问密码，改这里即可
 const KEY = {
   auth: 'hw_auth',            // 登录状态标记
   md:   'hw_content',         // 文章正文（自动保存）
@@ -40,6 +40,10 @@ const TEMPLATES = [
 ];
 const TPL_MAP = {};
 TEMPLATES.forEach((t) => { TPL_MAP[t.id] = t; });
+
+// 发布：站点分类 → 渲染所用模板 id（分类文案：梦/梦呓/醒）
+const PUBLISH_TEMPLATE = { dream: 'dream', murmur: 'murmur', awake: 'wake' };
+const PUBLISH_API = '/api/publish';
 
 // 首次使用（localStorage 为空）时给出的示例文章
 const SAMPLE_MD = [
@@ -731,6 +735,14 @@ const tplSelect     = $('tplSelect');
 const editor        = $('editor');
 const frame         = $('previewFrame');
 const exportBtn     = $('exportBtn');
+const publishBtn    = $('publishBtn');
+const publishModal  = $('publishModal');
+const publishForm   = $('publishForm');
+const pubCategory   = $('pubCategory');
+const pubTitle      = $('pubTitle');
+const pubPassword   = $('pubPassword');
+const pubError      = $('pubError');
+const pubSubmit     = $('pubSubmit');
 const mobileToggle  = $('mobileToggle');
 const wordCount     = $('wordCount');
 const toastEl       = $('toast');
@@ -1108,7 +1120,117 @@ function download(filename, content) {
   setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1000);
 }
 
-/* ---------------- 8. 移动端：预览 / 编辑切换 ---------------- */
+/* ---------------- 8. 发布到主页（/api/publish） ----------------
+   把正文渲染为「所选分类对应模板」的单文件 HTML（与导出同构）。
+   安全流程：先 GET /api/challenge 取一次性 nonce → 用发布密码在本机
+   算 HMAC-SHA256 签名 → POST { title, content, category, nonce, digest }
+   —— 明文密码永不上传；签名一次性、不可重放。
+   成功 → toast「发布成功」；签名错 → 红字「密码错误」；网络异常 → 「网络错误」。 */
+function guessTitle() {
+  const m = editor.value.match(/^\s*#\s+(.+)$/m);
+  let t = m ? m[1].trim() : '';
+  t = t.replace(/[*_`~]/g, '').replace(/\s+/g, ' ').trim();
+  return t.slice(0, 60);
+}
+
+function openPublishDialog() {
+  pubError.textContent = '';
+  pubTitle.value = guessTitle();
+  pubPassword.value = '';
+  publishModal.classList.remove('hidden');
+  (pubTitle.value ? pubPassword : pubTitle).focus();
+}
+
+function closePublishDialog() {
+  publishModal.classList.add('hidden');
+}
+
+/* 用密码对 message 计算 HMAC-SHA256，返回小写 hex（仅在本机计算） */
+async function hmacSha256Hex(secret, message) {
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    'raw', enc.encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false, ['sign']
+  );
+  const sig = await crypto.subtle.sign('HMAC', key, enc.encode(message));
+  return Array.from(new Uint8Array(sig))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+async function publishPost() {
+  const title = pubTitle.value.trim();
+  const password = pubPassword.value.trim();
+  const category = pubCategory.value;
+  const content = editor.value;
+
+  pubError.textContent = '';
+  if (!content.trim()) { pubError.textContent = '正文为空，无法发布'; return; }
+  if (!title) { pubError.textContent = '请填写标题'; pubTitle.focus(); return; }
+  if (!password) { pubError.textContent = '请填写发布密码'; pubPassword.focus(); return; }
+  if (!ensureMarked()) { pubError.textContent = 'marked.js 未加载，无法发布'; return; }
+  if (!window.crypto || !window.crypto.subtle) {
+    pubError.textContent = '当前环境不支持安全发布（需 HTTPS 或 localhost）';
+    return;
+  }
+
+  // 渲染为该分类对应模板的单文件 HTML（复用导出链路）
+  const tpl = TPL_MAP[PUBLISH_TEMPLATE[category]];
+  let css;
+  try {
+    css = await Promise.all([
+      readCssText('preview.css'),
+      readCssText(tpl.file),
+    ]);
+  } catch (err) {
+    pubError.textContent = err.message || '样式加载失败';
+    return;
+  }
+  const doc = buildStandaloneDoc({
+    title: title,
+    css: css[0] + '\n\n' + css[1],
+    bodyHtml: marked.parse(content),
+  });
+
+  pubSubmit.disabled = true;
+  try {
+    // 1) 领取一次性 nonce（120s 有效，用过即作废）
+    const ch = await fetch('/api/challenge', { cache: 'no-store' });
+    if (!ch.ok) { pubError.textContent = '获取发布凭证失败，请检查网络后重试'; return; }
+    const chData = await ch.json();
+    if (!chData || !chData.nonce) throw new Error('no nonce');
+
+    // 2) 密码只在本机参与签名，明文不上传；签名一次性、不可重放
+    const digest = await hmacSha256Hex(password, chData.nonce);
+
+    // 3) 提交文章 + nonce + 签名
+    const res = await fetch(PUBLISH_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title, content: doc, category,
+        nonce: chData.nonce, digest,
+      }),
+    });
+    if (res.ok) { closePublishDialog(); toast('发布成功'); return; }
+    let serverMsg = '';
+    try {
+      const data = await res.json();
+      serverMsg = (data && (data.error || data.message)) || '';
+    } catch (e) { /* 响应非 JSON 时忽略 */ }
+    pubError.textContent =
+      (res.status === 401 || res.status === 403 || /密码错误/.test(serverMsg))
+        ? '密码错误'
+        : (serverMsg || '发布失败（HTTP ' + res.status + '）');
+  } catch (err) {
+    pubError.textContent = '网络错误';
+  } finally {
+    pubSubmit.disabled = false;
+  }
+}
+
+/* ---------------- 9. 移动端：预览 / 编辑切换 ---------------- */
 function toggleMobileView() {
   const show = app.classList.toggle('show-preview');
   if (show) render();          // 切到预览时立即刷新一次
@@ -1118,7 +1240,7 @@ function syncMobileBtn() {
   mobileToggle.textContent = app.classList.contains('show-preview') ? '✎ 编辑' : '👁 预览';
 }
 
-/* ---------------- 9. 初始化 ---------------- */
+/* ---------------- 10. 初始化 ---------------- */
 function init() {
   // 已通过密码验证 → 直接进入；否则显示登录遮罩
   if (lsGet(KEY.auth) === '1') {
@@ -1151,6 +1273,14 @@ function init() {
   });
 
   exportBtn.addEventListener('click', exportHtml);
+  publishBtn.addEventListener('click', openPublishDialog);
+  publishModal.addEventListener('click', (e) => {
+    if (e.target.closest('[data-close]')) closePublishDialog();
+  });
+  publishForm.addEventListener('submit', (e) => { e.preventDefault(); publishPost(); });
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !publishModal.classList.contains('hidden')) closePublishDialog();
+  });
   mobileToggle.addEventListener('click', toggleMobileView);
 
   // 离开页面时把内容落盘

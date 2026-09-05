@@ -1,0 +1,21 @@
+# =========================================================
+# Mydream —— Cloudflare Pages（wrangler 本地/部署配置）
+#
+# 本地联调：npx wrangler pages dev . --kv MYDREAM_KV
+#   · 静态资源 + Functions 一起跑；KV 用本地模拟存储（id 可占位）。
+#   · wrangler v4 的 pages dev 需用 --kv 显式绑定本地的 KV。
+#   · 发布密钥 PUBLISH_PASSWORD 放 .dev.vars（仅存服务端作 HMAC
+#     校验用；发布密码以挑战-应答签名，明文不经过网络）。
+#
+# 线上（控制台或 wrangler secret/binding）需配置：
+#   · KV namespace 绑定 → 变量名 MYDREAM_KV
+#   · 环境变量 / 密钥    → PUBLISH_PASSWORD
+# =========================================================
+name = "mydream"
+
+compatibility_date = "2024-09-01"
+
+[[kv_namespaces]]
+binding = "MYDREAM_KV"
+# 本地 pages dev 用占位即可；上线前替换为控制台创建的真实 namespace id（32 位十六进制）
+id = "00000000000000000000000000000000"

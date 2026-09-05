@@ -1,5 +1,9 @@
 # 待办 / 已知问题 / 需求记录（Roadmap）
 
+## 已完成（近期新增功能，回顾见 activeContext）
+- [x] **发布到主页**（2026-09-05）：html-writer「📤 发布」+ `/api/challenge`（一次性 nonce）+ `/api/publish`（HMAC-SHA256 签名校验，明文密码不上传）+ `/api/posts` + `/api/post`（KV 存储）+ 首页动态渲染。
+  - **上线前待做**：Cloudflare 控制台创建 KV namespace 并绑定 `MYDREAM_KV`、添加密钥 `PUBLISH_PASSWORD`；wrangler.toml 里已留占位与说明。
+
 ## 可选的下一步（按价值排序）
 - [ ] **字号档位「记忆」**：导出文件里内联一小段脚本，读 `localStorage` 恢复上次档位（仅成品；预览保持纯 CSS 不可记忆）。
 - [ ] **退出登录**：顶栏加「退出」按钮 → 清 `localStorage.hw_auth` 回到登录遮罩（当前只能手清 localStorage）。

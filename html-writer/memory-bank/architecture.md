@@ -18,6 +18,17 @@ html-writer/
 └── memory-bank/         # ← 本目录
 ```
 
+仓库根（发布根）另含第四轮发布相关文件：
+```
+functions/
+├── api/challenge.js     # GET  /api/challenge（发布前领取一次性 nonce）
+├── api/publish.js       # POST /api/publish（HMAC 校验签名→存 KV post:<slug>）
+├── api/posts.js         # GET  /api/posts（KV 列表→按 dream/murmur/awake 分组）
+└── api/post.js          # GET  /api/post?slug=（返回存好的单文件 HTML）
+wrangler.toml            # KV 绑定声明 + 本地联调说明
+.dev.vars                # 本地 PUBLISH_PASSWORD（已 gitignore）
+```
+
 ## app.js 内部结构（按注释分区）
 
 1. **配置**：`PASSWORD`（'2026'）、`KEY`（localStorage 键：hw_auth / hw_content / hw_tpl）、`TEMPLATES[]`（id/name/file）+ `TPL_MAP`、`SAMPLE_MD`（首启示例）。
@@ -28,8 +39,9 @@ html-writer/
 5. **工具栏**：`runCommand(cmd)`；`snapshot/undo/syncUndoBtn`（撤销栈上限 100，仅工具栏操作入栈）；`wrapSel`（占位符自动选中）；`prefixLines`（多行逐行加/去前缀 toggle）；`insertCodeBlock/insertLink/insertImage/insertHr`；`updateWordCount`（去空白计数）；`scheduleSave`（400ms 防抖）。
 6. **实时预览**：`previewDocHtml()` → `render()`（doc.write 进 iframe，防抖 200ms，渲染后尽量恢复滚动位置）。
 7. **导出**：`readCssText`（fetch→EMBEDDED 兜底，带缓存 cssCache）→ `exportHtml` → `buildStandaloneDoc()` → `download()`（Blob+`<a download>`）；`makeTitle`、`escapeHtml`。
-8. **移动端**：`toggleMobileView/syncMobileBtn`（`#app.show-preview`）。
-9. `init()`：登录判定 + 全部事件绑定，脚本尾部直接执行。
+8. **发布到主页**：`guessTitle`（首行 `# 标题`）→ `openPublishDialog/closePublishDialog` → `publishPost()`：按分类模板（PUBLISH_TEMPLATE：dream/murmur/awake→dream/murmur/wake）渲染单文件 HTML → `fetch('/api/publish')` → 成功 toast「发布成功」/ 401 红字「密码错误」/ fetch 异常「网络错误」。
+9. **移动端**：`toggleMobileView/syncMobileBtn`（`#app.show-preview`）。
+10. `init()`：登录判定 + 全部事件绑定（含发布按钮/弹窗/表单/Esc），脚本尾部直接执行。
 
 ## 关键机制
 
@@ -49,6 +61,14 @@ html-writer/
 ### 模板系统（三处登记）
 模板要同时出现在：① `TEMPLATES` 常量；② `index.html` 的 `<select id="tplSelect">`；③ `EMBEDDED_CSS` 的 `templates/<id>.css` 键（仅 file:// 导出兜底需要）。样式优先级：`preview.css`（基础）→ `templates/*.css`（覆盖）。
 
+### 发布系统（第四轮，仓库根 functions/ + 首页动态）
+- 「发布」= 把正文渲染成**所选分类对应模板的单文件 HTML**（前端 `buildStandaloneDoc` 输出即 `content`，含内联 CSS 与 `<title>`）→ 经**挑战-应答 HMAC-SHA256** 授权后存 KV。
+- **安全模型（无明文密码上线）**：① 前端 GET `/api/challenge` 领取一次性 nonce（KV 登记、120s 过期、用后即删）；② 发布密码**只在本机**与 nonce 算 HMAC-SHA256 → POST `{title, content, category, nonce, digest}`；③ 后端用 `env.PUBLISH_PASSWORD` 重新计算并 `crypto.subtle.verify`（常量时间）。明文密码永不出浏览器，digest 不可重放；`PUBLISH_PASSWORD` 仅存 CF 密钥（**不是**页面访问密码 `PASSWORD`）。
+- KV：键 `post:<slug>`（slug = 标题 sanitize（ASCII）+ 时间戳），值 JSON `{slug,title,category,content,note,createdAt}`；note 由后端从 HTML 首 `<p>` 提取（思路同根目录 build.js）。挑战 nonce 键：`challenge:<nonce>`。
+- 阅读链路：首页 `assets/main.js` fetch `api/posts`（GET 分组列表）→ 追加 `.work` 卡片（链接 `api/post?slug=`）→ GET `api/post` 原样返回存好的 HTML。发布失败/未配置后端时首页与 html-writer 均静默降级，不影响纯静态使用。
+- 前端分类→模板：`PUBLISH_TEMPLATE = { dream:'dream', murmur:'murmur', awake:'wake' }`（注意站点分类键 `awake` 对应模板 `wake`）。HMAC 依赖 `crypto.subtle`（HTTPS/localhost 才可用；file:// 发布本就无后端，提示网络错误）。
+- 上线需在 Cloudflare 控制台：绑定 KV namespace `MYDREAM_KV` + 添加密钥 `PUBLISH_PASSWORD`。**wrangler v4 的 `pages dev` 不读 toml 的 `[[kv_namespaces]]`，本地要用 `--kv MYDREAM_KV` 显式绑定**。
+
 ## 易踩坑 / 注意事项（重要）
 
 1. **marked 必须锁版本 4.3.0**：`https://cdn.jsdelivr.net/npm/marked@4.3.0/marked.min.js`。marked 新版（5+ 尤其 12+）已把根目录 `marked.min.js` 移除、主推 ESM，裸地址 `…/marked/marked.min.js` 会 404。
@@ -61,6 +81,7 @@ html-writer/
 8. 页面与预览**完全隔离**：页面自身样式在 style.css；预览/导出排版在 preview.css + templates——别把文章排版写进 style.css。
 
 ## 运行 / 部署
-- 本地：双击 `index.html`（需联网加载 marked）；`python3 -m http.server` 亦可。
-- Cloudflare Pages：整目录推送，无构建步骤、无环境变量。
-- 密码改法：`app.js` 顶部 `PASSWORD`；登录状态存 `hw_auth`，删掉即需重新输密码。
+- 本地：双击 `index.html`（需联网加载 marked；file:// 下「发布」会因无后端提示网络错误，属预期）；`python3 -m http.server` 亦可。
+- 发布相关本地联调：`npx wrangler pages dev . --kv MYDREAM_KV`（发布密码放 `.dev.vars` 的 `PUBLISH_PASSWORD`）。
+- Cloudflare Pages：整目录推送，Functions 自动生效；**发布功能上线前需在控制台绑定 KV `MYDREAM_KV` 并配置密钥 `PUBLISH_PASSWORD`**（详见 activeContext 第四轮）。
+- 页面访问密码改法：`app.js` 顶部 `PASSWORD`；登录状态存 `hw_auth`，删掉即需重新输密码。

@@ -1,6 +1,24 @@
 # 当前进度（Active Context）
 
-> 续写项目时**最先看本文件**。最近会话的三轮改动均已完成并通过验证，无遗留的半成品改动。
+> 续写项目时**最先看本文件**。最近会话的四轮改动均已完成并通过验证，无遗留的半成品改动。
+
+## 第四轮：发布到主页（2026-09-05）
+
+在 html-writer 加「📤 发布」入口，打通「写 → 发布 → 首页可见」闭环。本次按用户确认的范围实现三部分：
+
+1. **前端（html-writer）**：顶栏「导出」左侧新增 `#publishBtn`（📤 发布）；点击弹 `#publishModal` 对话框（分类 梦/梦呓/醒 → `dream/murmur/awake`、标题默认取首行 `# 标题`、发布密码）。确认后把正文**渲染为所选分类对应模板的单文件 HTML**（复用 `readCssText` + `buildStandaloneDoc`：梦→dream、梦呓→murmur、醒→wake 模板），再经**挑战-应答 HMAC-SHA256**（先 `GET /api/challenge` 领一次性 nonce，密码在本机签名，**明文永不上传**）POST `{title, content, category, nonce, digest}` 到 `/api/publish`。成功 toast「发布成功」；401 → 红字「密码错误」；凭证失效/过期 400 → 显示服务端原因；fetch 异常 → 「网络错误」。样式新增 `.modal` 系列（`style.css`，并补上原本缺失的 `--danger` 变量）。
+2. **后端（仓库根 `functions/`，Cloudflare Pages Function）**：
+   - `functions/api/challenge.js`（GET）：随机 16 字节 → nonce（32 位 hex），KV `challenge:<nonce>` 登记 120s 过期（TTL + exp 双重）。
+   - `functions/api/publish.js`（POST）：分类白名单 → 校验一次性 nonce（存在/未过期，**用后即删防重放**）→ `crypto.subtle.verify` 校验 HMAC（`env.PUBLISH_PASSWORD` 为密钥，常量时间）→ 生成 ASCII slug（标题 sanitize + 时间戳）→ 从 HTML 提取首段作 note → 存 KV `post:<slug>`。
+   - `functions/api/posts.js`（GET）：KV 前缀 `post:` 列表 → 按 `createdAt` 降序、按 dream/murmur/awake 分组返回。
+   - `functions/api/post.js`（GET `?slug=`）：取回存好的单文件 HTML 原样返回（text/html），供首页卡片点击阅读。
+3. **首页动态渲染（`assets/main.js`）**：页面加载后 `fetch('api/posts')`，把已发布文章以 `.work` 卡片插入对应板块（`dream/murmur/awake` → `data-works="dream/murmur/wake"`），有动态文章时移除 `.empty` 占位；失败静默不影响静态卡片。
+
+**安全设计说明（应「线上不要明文密码」要求，第四轮后半程将明文密码上传改为挑战-应答）**：`PUBLISH_PASSWORD` 只作为服务端 HMAC 密钥存在 Cloudflare 密钥里；发布密码不进入请求体、不落日志、不在仓库；nonce 一次性 + 120s 过期，即使抓包也无法重放；HMAC 校验用 `crypto.subtle.verify`（常量时间，抗时序攻击）。代价：发布依赖 HTTPS/localhost（`crypto.subtle` 安全上下文），file:// 下提示「网络错误」（本就无后端）。
+
+**上线前待配置**：Cloudflare 控制台创建 KV namespace 并绑定 `MYDREAM_KV`、添加密钥 `PUBLISH_PASSWORD`（本地在 `.dev.vars`，已加 `.gitignore`）。本地联调命令：`npx wrangler pages dev . --kv MYDREAM_KV`（wrangler v4 的 pages dev 不会自动读 toml 里的 `[[kv_namespaces]]`，需 `--kv` 显式绑定）。
+
+**验证记录**：`node --check` 全部通过；mock KV 冒烟（challenge 领取 / 正确签名 200 / **重放 400** / 错密码 401 / 随机·过期·非法 nonce 400 / 老明文密码字段 400）✅；`wrangler pages dev . --kv MYDREAM_KV` 端到端 curl（challenge→HMAC→发布 200→重放 400→错签名 401→老字段 400→列表可见）✅。安全方案：挑战-应答 HMAC-SHA256，明文密码永不出浏览器，nonce 一次性防重放。
 
 ## 第一轮：从零搭建（2026-09-04）
 
@@ -54,3 +72,4 @@
 ## 最近一次操作人 / 时间
 - 2026-09-04：两轮改动均完成并验证；随后建立本 Memory Bank。
 - 2026-09-04（续）：第三轮新增「梦 / 梦呓 / 醒」三个板块模板（三处登记 + 内置副本 + 示例文案），均完成并验证。
+- 2026-09-05：第四轮「发布到主页」（前端按钮/对话框/POST + functions/ 三个端点 + 首页动态渲染），mock 冒烟 + wrangler pages dev 端到端均通过；待用户上线前在控制台绑定 KV 与发布密码。

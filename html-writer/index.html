@@ -48,6 +48,7 @@
     </select>
 
     <button type="button" id="mobileToggle" class="btn">👁 预览</button>
+    <button type="button" id="publishBtn" class="btn" title="发布到主页">📤 发布</button>
     <button type="button" id="exportBtn" class="btn primary">⬇ 导出 HTML</button>
   </header>
 
@@ -90,6 +91,41 @@
     </section>
 
   </main>
+</div>
+
+<!-- ================= 发布对话框 ================= -->
+<div id="publishModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="publishTitle">
+  <div class="modal-mask" data-close="1"></div>
+  <form class="modal-card" id="publishForm" autocomplete="off">
+    <h2 id="publishTitle">发布到主页</h2>
+    <p class="modal-sub">正文将渲染为单文件 HTML，发布到站点对应板块（梦 / 梦呓 / 醒）。<br>发布密码仅在本浏览器内用于签名，不会明文上传。</p>
+
+    <label class="field">
+      <span class="field-label">分类</span>
+      <select id="pubCategory">
+        <option value="dream">梦</option>
+        <option value="murmur">梦呓</option>
+        <option value="awake">醒</option>
+      </select>
+    </label>
+
+    <label class="field">
+      <span class="field-label">标题</span>
+      <input type="text" id="pubTitle" maxlength="80" placeholder="默认取首行标题，可修改">
+    </label>
+
+    <label class="field">
+      <span class="field-label">发布密码</span>
+      <input type="password" id="pubPassword" placeholder="请输入发布密码">
+    </label>
+
+    <div id="pubError" class="modal-error"></div>
+
+    <div class="modal-actions">
+      <button type="button" class="btn" data-close="1">取消</button>
+      <button type="submit" class="btn primary" id="pubSubmit">发布</button>
+    </div>
+  </form>
 </div>
 
 <div id="toast" class="toast"></div>

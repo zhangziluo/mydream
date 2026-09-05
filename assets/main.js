@@ -30,5 +30,73 @@
   /* ---------------- 页脚年份 ---------------- */
   var yearEl = document.getElementById('year');
   if (yearEl) yearEl.textContent = String(new Date().getFullYear());
+
+  /* ---------------- 已发布文章（KV 动态源，/api/posts） ----------------
+     加载成功后按栏目渲染卡片；失败（本地无 Functions 等）则静默，
+     保留 build.js 生成的静态卡片与占位。 */
+  function createCard(post) {
+    var li = document.createElement('li');
+
+    var a = document.createElement('a');
+    a.className = 'work';
+    a.href = 'api/post?slug=' + encodeURIComponent(post.slug);
+    a.target = '_blank';
+    a.rel = 'noopener';
+
+    var info = document.createElement('span');
+    info.className = 'w-info';
+
+    var title = document.createElement('span');
+    title.className = 'w-title';
+    title.textContent = '《' + post.title + '》';
+    info.appendChild(title);
+
+    if (post.note) {
+      var note = document.createElement('span');
+      note.className = 'w-note';
+      note.textContent = post.note;
+      info.appendChild(note);
+    }
+
+    var badge = document.createElement('span');
+    badge.className = 'w-badge';
+    badge.textContent = 'html';
+
+    var go = document.createElement('span');
+    go.className = 'w-go';
+    go.setAttribute('aria-hidden', 'true');
+    go.textContent = '→';
+
+    a.appendChild(info);
+    a.appendChild(badge);
+    a.appendChild(go);
+    li.appendChild(a);
+    return li;
+  }
+
+  /* API 分类键 dream/murmur/awake → 首页板块 data-works 值 */
+  var BOARD_MAP = { dream: 'dream', murmur: 'murmur', awake: 'wake' };
+
+  fetch('api/posts', { cache: 'no-cache' })
+    .then(function (res) {
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return res.json();
+    })
+    .then(function (postsByBoard) {
+      Object.keys(BOARD_MAP).forEach(function (category) {
+        var ul = document.querySelector('.works[data-works="' + BOARD_MAP[category] + '"]');
+        var list = postsByBoard[category];
+        if (!ul || !list || !list.length) return;
+
+        var empty = ul.querySelector('li.empty');
+        if (empty) empty.remove();
+
+        var anchor = ul.querySelector('li');   // 静态卡片锚点（可能为 null）
+        list.forEach(function (post) {
+          ul.insertBefore(createCard(post), anchor);
+        });
+      });
+    })
+    .catch(function () { /* 无后端时静默 */ });
 })();
 
