@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>留言 · Mydream</title>
+<meta name="description" content="在 Mydream 留言：留下你的名字，和一句想说的话。">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body class="guestbook-page">
+
+<div class="guestbook">
+  <a class="gb-back" href="index.html">← 返回首页</a>
+
+  <header class="guestbook-head">
+    <h1>留言</h1>
+    <p class="gb-sub">在字与字的间隙里，留下一句给我</p>
+  </header>
+
+  <form class="gb-form" id="gbForm" autocomplete="off">
+    <span class="gb-label" id="gbNameLabel">昵称（只读，可换一个）</span>
+    <div class="gb-name">
+      <input type="text" id="gbName" readonly spellcheck="false" aria-labelledby="gbNameLabel" placeholder="生成中……">
+      <button type="button" class="gb-rename" id="gbRename">换一个</button>
+    </div>
+
+    <label class="gb-label" for="gbText">留言</label>
+    <textarea id="gbText" rows="4" maxlength="500" placeholder="想说点什么……"></textarea>
+    <div class="gb-count"><span id="gbCount">0</span> / 500</div>
+
+    <button type="submit" class="gb-submit" id="gbSubmit">写下留言</button>
+    <p class="gb-error" id="gbError" role="alert"></p>
+  </form>
+
+  <div id="gbList" class="gb-list" aria-live="polite"></div>
+</div>
+
+<script src="assets/guestbook.js"></script>
+</body>
+</html>

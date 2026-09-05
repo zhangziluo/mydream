@@ -14,10 +14,10 @@
 - HEAD：`2228997`（最近一次内容变更：删除本地 awake 静态文章并重建首页卡片）。
 
 **代码布局（仓库根）**
-- 首页 `index.html` + `assets/style.css` + `assets/main.js`：静态卡片由 build.js 生成；每栏动态显示**最新 2 篇**已发布文章；栏目标题 /「查看全部 →」→ 分类页。
+- 首页 `index.html` + `assets/style.css` + `assets/main.js`：静态卡片由 build.js 生成；每栏动态显示**最新 2 篇**已发布文章；栏目标题 /「查看全部 →」→ 分类页；页脚含「赞助（二维码弹窗）/ 留言 / 关于 / ✉ 联系」入口。留言板 `guestbook.html` + `assets/guestbook.js`（纯前端 localStorage，昵称随机 + 最多 50 条），关于页 `about.html`（含邮箱联系方式），样式统一在 `assets/style.css`。
 - 分类管理页 `dream.html / murmur.html / awake.html` + `assets/category.css|js`：每分类一页，CSS 多列瀑布流 + 顶部搜索框（标题 + 正文全文本地过滤）。
 - API：`functions/api/{challenge,publish,posts,post}.js` + 共用鉴权 `functions/_shared/auth.js`。
-- 写作工具 `html-writer/`（登录遮罩 → Markdown 编辑器 → 导出 / 📤发布 / 🗂已发布管理删除）。
+- 写作工具 `html-writer/`（登录遮罩 → Markdown 编辑器 → 导出 / 📤发布 / 🗂已发布管理删除 / 📂打开文件：本地 .md/.txt 打开 + 已发布文章编辑（更新原文 / 另存为新文章））。
 - 板块静态目录 `dream/ whisper/ awake/` **当前全空**（不再用静态目录发新文）；`build.js` 仍在 build 命令里执行（输出 0 张卡片占位，无害）。
 
 **线上数据（收盘快照，会变）**：`/api/posts` → dream 0 / murmur 2（两篇《9月5日的日记》）/ awake 0。增删都在线进行（html-writer「🗂 已发布」）。
@@ -28,6 +28,33 @@
 3. Pages Functions 的绑定 / 密钥在**构建时快照**：改完必须再部署一次（空 commit 即可）才生效。
 4. 裸 REST 用 OAuth token 过期会 401；`wrangler …` 会自动刷新 token。
 5. CF Pages 会把 `/xxx.html` 308 到 `/xxx`（干净 URL）；不存在的路径会**回退首页 200**（SPA 行为）。
+
+## 第九轮：站点页脚扩展（赞助 / 留言板 / 关于 / 联系）（2026-09-06）
+
+需求：站点 footer 新增「赞助」二维码弹窗、「留言」纯前端留言板、「联系」mailto，并清除 footer 的 Dream OS 链接；新建简洁「关于」页展示邮箱。全部纯原生，无外部库；CSS 统一追加进 `assets/style.css`，JS 沿用/新建。
+
+1. **首页 `index.html`**：footer 移除 Dream OS 外链，新增 `.footer-links`（赞助 = button 开弹窗；留言 → `guestbook.html`；关于 → `about.html`；✉ 联系 = `mailto:409543901@qq.com`）；`</body>` 前新增 `#sponsorModal`（爱发电 `afdian-qr.png` + 微信赞赏 `wechat-reward.png` 两张二维码 + `×` 关闭）。
+2. **`assets/main.js`**：追加赞助弹窗逻辑——`[data-open-sponsor]` 打开、点遮罩/`×`/Esc 关闭、`body.modal-open` 锁滚动、`aria-hidden` 同步。
+3. **`assets/style.css`**：删除 `.os-entry` 死样式；新增 `.hidden`、`.modal/.modal-mask/.modal-card/.modal-close/.qr-grid/.qr-figure`、`.footer-links/.footer-link`、留言板 `.guestbook*`、关于页 `.about*`、`body.guestbook-page/about-page` 背景（星月夜→向日葵固定渐变）与移动端适配；`.modal-card` 动画在 `prefers-reduced-motion` 下关闭。
+4. **留言板（新）`guestbook.html` + `assets/guestbook.js`**：昵称由「形容词的 + 名词」随机生成（如 清醒的雷东宝 / 沉默的奥德修斯），存 `localStorage.guest_name` 持久复用，「换一个」重随机；留言存 `guestbook_messages`（`{name,text,ts}`）上限 **50 条删最早**，加载倒序渲染（最新在前），相对时间（刚刚/N 分钟前/…/日期），非空 + 500 字校验；渲染全用 `textContent` 防 XSS。
+5. **关于页（新）`about.html`**：简洁文艺介绍 + 邮箱 `mailto:409543901@qq.com` 联系方式。
+6. 兼容：build.js 仅重写 `<ul data-works>` 区块，不会覆盖 footer/弹窗；二维码图片在 `assets/images/`（注意任务描述中的 `aifadian-qr.jpg` 实为 `afdian-qr.png`，按实际文件引用）。
+7. **验证**：`node --check` JS 语法通过；CSS 括号配平；jsdom 冒烟 **38/38**（footer 4 入口/Dream OS 已除、弹窗开关与 Esc/遮罩、二维码路径、昵称生成与持久化与「换一个」、空内容拦截、留言写入与倒序/相对时间、XSS 不执行、50 条封顶删最早、重新访问数据仍在、关于页 mailto）。
+
+## 第八轮：打开文件（本地 .md/.txt + 可编辑已发布文章）（2026-09-06）
+
+需求：写作工具右上角加「📂 打开文件」，可打开本地 `*.md`/`*.txt`，也可打开已发布文章继续编辑；确认保存策略 = **默认更新原文，发布框可勾选「另存为新文章」**。
+
+1. **后端**：
+   - `functions/api/publish.js`：请求体新增 `md`（原始 Markdown，此前只存渲染 HTML）与可选 `slug`。带合法 slug → **原地更新**（保留 slug/createdAt，更新 title/category/content/md/note + updatedAt）；不带 → 原新建逻辑。更新与新建走同一 nonce+HMAC 鉴权，slug 用 `SAFE_SLUG` 白名单。
+   - `functions/api/post.js`：`GET /api/post?slug=&md=1` 返回 `{slug,title,category,md,createdAt}`（写作工具编辑取回用）；默认仍返回 HTML 阅读页，首页/分类阅读不受影响。
+   - `functions/api/posts.js`：列表项新增 `hasMd`（是否存有原始 Markdown，供「打开」置灰旧版不可编辑）。
+2. **前端（html-writer）**：
+   - `index.html`：顶栏新增 `#openFileBtn`（📂 打开文件）；新增 `#openFileModal`（本地文件按钮 `#openFilePickBtn` + 隐藏 file input；已发布文章列表 `#openFileList`）；发布框新增 `#pubEditHint` 更新提示与「另存为新文章」勾选 `#pubNewField/#pubNewPost`。
+   - `app.js`：`editingSlug/editingTitle/editingCategory` 三态；`loadOpenFileList/renderOpenItems`（GET `/api/posts`，hasMd=false 显示「不可编辑」）；`openPublishedPost`（`?md=1` 取回 md 载入编辑器，模板按分类自动切到 dream/murmur/wake）；`openLocalFiles`（FileReader 纯前端读 .md/.txt，不上传）；`loadIntoEditor`（清撤销栈 + 触发 input 统一处理）；发布时默认带 `slug` 原地更新，勾选另存则不带（新建）；成功后清编辑态并 toast「已更新文章 / 发布成功」。分类下拉在编辑态自动回填原分类，标题在正文无 `#` 时回退原标题。
+   - `style.css`：`.openfile-card / .openfile-section / .openfile-local / .manage-open / .pub-edit-hint / .pub-new-field`。
+3. **兼容性**：旧版已发布文章（无 md）列表置灰「不可编辑」，点开给明确提示，不破坏数据；`/api/posts` 加 `hasMd` 对首页/分类页无副作用。
+4. **验证**：`node --check` 全部通过；mock KV 端到端（challenge→新建→posts.hasMd→post?md=1→带 slug 更新（同 slug/保留 createdAt）→另存新建→无效 slug 404）11/11 ✅；jsdom UI 冒烟（列表→打开→切模板→发布框提示/分类回填→提交带 md+slug→另存不带 slug→本地 .md 载入→非法类型拦截）23/23 ✅。
 
 ## 第七轮：删除本地 awake 静态文章并同步线上（2026-09-05）
 

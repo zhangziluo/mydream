@@ -98,6 +98,31 @@
         });
       });
     })
-    .catch(function () { /* 无后端时静默 */ });
+  /* ---------------- 赞助模态框 ---------------- */
+  var sponsorModal = document.getElementById('sponsorModal');
+  if (sponsorModal) {
+    function openSponsor() {
+      sponsorModal.classList.remove('hidden');
+      sponsorModal.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('modal-open');
+    }
+    function closeSponsor() {
+      sponsorModal.classList.add('hidden');
+      sponsorModal.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('modal-open');
+    }
+    var sponsorTriggers = document.querySelectorAll('[data-open-sponsor]');
+    sponsorTriggers.forEach(function (btn) {
+      btn.addEventListener('click', openSponsor);
+    });
+    // 点遮罩或 × 关闭
+    sponsorModal.addEventListener('click', function (e) {
+      if (e.target.closest('[data-close-sponsor]')) closeSponsor();
+    });
+    // Esc 关闭
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !sponsorModal.classList.contains('hidden')) closeSponsor();
+    });
+  }
 })();
 

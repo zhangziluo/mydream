@@ -172,9 +172,34 @@
 
   <footer class="page-footer">
     <p>© <span id="year">2026</span> · Mydream · 梦，是夜的另一种语言</p>
-    <p><a class="os-entry" href="https://mydream-os.pages.dev/" target="_blank" rel="noopener">Dream&nbsp;OS</a></p>
+    <nav class="footer-links" aria-label="站点页脚">
+      <button type="button" class="footer-link" data-open-sponsor>赞助</button>
+      <a class="footer-link" href="guestbook.html">留言</a>
+      <a class="footer-link" href="about.html">关于</a>
+      <a class="footer-link" href="mailto:409543901@qq.com">✉ 联系</a>
+    </nav>
   </footer>
 
+</div>
+
+<!-- ============ 赞助模态框 ============ -->
+<div class="modal hidden" id="sponsorModal" role="dialog" aria-modal="true" aria-labelledby="sponsorTitle" aria-hidden="true">
+  <div class="modal-mask" data-close-sponsor></div>
+  <div class="modal-card sponsor-card">
+    <button type="button" class="modal-close" data-close-sponsor aria-label="关闭">×</button>
+    <h2 id="sponsorTitle">赞助</h2>
+    <p class="modal-sub">如果这里的字曾陪你度过某个夜晚，欢迎请我喝一杯茶。</p>
+    <div class="qr-grid">
+      <figure class="qr-figure">
+        <img src="assets/images/afdian-qr.png" alt="爱发电收款二维码" loading="lazy">
+        <figcaption>爱发电</figcaption>
+      </figure>
+      <figure class="qr-figure">
+        <img src="assets/images/wechat-reward.png" alt="微信赞赏二维码" loading="lazy">
+        <figcaption>微信赞赏</figcaption>
+      </figure>
+    </div>
+  </div>
 </div>
 
 <script src="assets/main.js"></script>
