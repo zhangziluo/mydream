@@ -1,16 +1,7 @@
 # =========================================================
-# Cloudflare Pages / Wrangler 静态资产自定义响应头
-# 注意：路径必须以 / 开头；需位于「发布根目录」。
+# Mydream 主站响应头（发布根 = 仓库根）
+# Dream OS 已拆分为独立仓库 mydream-os，不再发布本目录 web-os
 # =========================================================
-
-# Service Worker 不缓存：升级 sw.js 后能立即让浏览器拿到新版
-/web-os/sw.js
-  Cache-Control: no-cache
-
-# PWA manifest 正确 MIME + 不缓存
-/web-os/manifest.webmanifest
-  Content-Type: application/manifest+json
-  Cache-Control: no-cache
 
 # 首页不缓存（避免作品卡片更新后看到旧页面）
 /index.html
@@ -18,4 +9,5 @@
 
 /
   Cache-Control: no-cache
+
 
