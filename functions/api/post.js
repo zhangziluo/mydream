@@ -5,6 +5,8 @@
    DELETE /api/post?slug=<slug>  删除文章（body 携带
                                  { nonce, digest }，同一性鉴权见
                                  _shared/auth.js）
+   GET    /api/post?slug=<slug>&md=1 返回 JSON {slug,title,category,md,createdAt}
+                                  —— 写作工具「打开文件」打开已发布文章编辑用；
 
    首页卡片点开 = GET 阅读；html-writer「发布管理」删除 = DELETE。
    ========================================================= */
@@ -24,6 +26,7 @@ export async function onRequestGet({ request, env }) {
 
   const url = new URL(request.url);
   const slug = (url.searchParams.get('slug') || '').trim();
+  const wantMd = url.searchParams.get('md') === '1';
   if (!SAFE_SLUG.test(slug)) {
     return new Response('Not found', { status: 404 });
   }
@@ -35,6 +38,16 @@ export async function onRequestGet({ request, env }) {
 
   try {
     const r = JSON.parse(raw);
+    // ?md=1：写作工具「打开文件」编辑已发布文章用，返回原始 Markdown
+    if (wantMd) {
+      return json({
+        slug: r.slug || slug,
+        title: String(r.title || ''),
+        category: String(r.category || ''),
+        md: String(r.md || ''),
+        createdAt: Number(r.createdAt) || 0,
+      });
+    }
     return new Response(r.content, {
       headers: { 'Content-Type': 'text/html; charset=utf-8' },
     });

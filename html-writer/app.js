@@ -754,6 +754,15 @@ const manageError   = $('manageError');
 const mobileToggle  = $('mobileToggle');
 const wordCount     = $('wordCount');
 const toastEl       = $('toast');
+const openFileBtn   = $('openFileBtn');
+const openFileModal = $('openFileModal');
+const openFileList  = $('openFileList');
+const openFileError = $('openFileError');
+const openFilePickBtn = $('openFilePickBtn');
+const localFileInput = $('localFileInput');
+const pubEditHint   = $('pubEditHint');
+const pubNewField   = $('pubNewField');
+const pubNewPost    = $('pubNewPost');
 
 let currentTpl = DEFAULT_TPL;
 const undoStack = [];
@@ -762,6 +771,9 @@ let renderTimer = null;
 let saveTimer = null;
 let toastTimer = null;
 let markedConfigured = false;
+let editingSlug = null;   // 当前已打开（编辑中）的已发布文章 slug；null = 新建/本地文件
+let editingTitle = '';    // 该文章标题（发布框「更新原文」提示用）
+let editingCategory = ''; // 该文章分类（发布框分类下拉默认值）
 
 /* ---------- localStorage 小工具（隐私模式失败时静默降级） ---------- */
 function lsGet(key, fallback) {
@@ -1144,8 +1156,13 @@ function guessTitle() {
 
 function openPublishDialog() {
   pubError.textContent = '';
-  pubTitle.value = guessTitle();
+  // 正文首行有 # 标题则用之；编辑已发布文章且正文无标题时回退到文章原标题
+  pubTitle.value = guessTitle() || (editingSlug ? editingTitle : '');
+  // 编辑已发布文章时，分类下拉默认切回原分类，避免更新时误改分类
+  if (editingSlug && editingCategory) pubCategory.value = editingCategory;
   pubPassword.value = '';
+  pubNewPost.checked = false;
+  syncPublishEditUi();
   publishModal.classList.remove('hidden');
   (pubTitle.value ? pubPassword : pubTitle).focus();
 }
@@ -1202,6 +1219,10 @@ async function publishPost() {
     bodyHtml: marked.parse(content),
   });
 
+  // 「编辑已发布文章」模式：默认更新原文；勾选「另存为新文章」则新建
+  const asNew = pubNewPost.checked;
+  const updateSlug = (!asNew && editingSlug) ? editingSlug : null;
+
   pubSubmit.disabled = true;
   try {
     // 1) 领取一次性 nonce（120s 有效，用过即作废）
@@ -1213,16 +1234,26 @@ async function publishPost() {
     // 2) 密码只在本机参与签名，明文不上传；签名一次性、不可重放
     const digest = await hmacSha256Hex(password, chData.nonce);
 
-    // 3) 提交文章 + nonce + 签名
+    // 3) 提交文章 + 原始 Markdown + nonce + 签名（带 slug = 原地更新原文）
     const res = await fetch(PUBLISH_API, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         title, content: doc, category,
+        md: content,
+        ...(updateSlug ? { slug: updateSlug } : {}),
         nonce: chData.nonce, digest,
       }),
     });
-    if (res.ok) { closePublishDialog(); toast('发布成功'); return; }
+    if (res.ok) {
+      closePublishDialog();
+      editingSlug = null;
+      editingTitle = '';
+      editingCategory = '';
+      syncPublishEditUi();
+      toast(updateSlug ? '已更新文章' : '发布成功');
+      return;
+    }
     let serverMsg = '';
     try {
       const data = await res.json();
@@ -1358,6 +1389,155 @@ async function deleteManagedPost(slug, title) {
   }
 }
 
+/* ---------------- 8.5 打开文件（本地 .md/.txt + 已发布文章，可编辑） ----------------
+   「📂 打开文件」：右上角按钮。弹窗内两区——
+   ① 本地文件：选择 .md/.txt，FileReader 纯前端读取，不上传；
+   ② 已发布文章：GET /api/posts 列表 → 点「打开」GET /api/post?slug=&md=1
+      取回发布时保存的原始 Markdown 载入编辑器，并标记 editingSlug，
+      随后「发布」默认走 /api/publish 携带 slug 原地更新（可勾选另存为新文章）。 */
+function setOpenListEmpty(text) {
+  openFileList.textContent = '';
+  const empty = document.createElement('div');
+  empty.className = 'manage-empty';
+  empty.textContent = text;
+  openFileList.appendChild(empty);
+}
+
+function renderOpenItems(items) {
+  openFileList.textContent = '';
+  if (!items.length) { setOpenListEmpty('还没有已发布的文章'); return; }
+  items.forEach((p) => {
+    const row = document.createElement('div');
+    row.className = 'manage-item';
+
+    const info = document.createElement('div');
+    info.className = 'manage-info';
+    const titleEl = document.createElement('span');
+    titleEl.className = 'manage-title';
+    titleEl.textContent = '《' + p.title + '》';
+    const metaEl = document.createElement('span');
+    metaEl.className = 'manage-meta';
+    metaEl.textContent = (CATEGORY_NAMES[p.category] || p.category) + ' · ' + fmtManageDate(p.createdAt)
+      + (p.hasMd ? '' : ' · 旧版发布（无 Markdown）');
+    info.appendChild(titleEl);
+    info.appendChild(metaEl);
+
+    const openBtn = document.createElement('button');
+    openBtn.type = 'button';
+    openBtn.className = 'manage-open';
+    openBtn.dataset.slug = p.slug;
+    openBtn.dataset.title = p.title;
+    openBtn.textContent = p.hasMd ? '打开' : '不可编辑';
+    if (!p.hasMd) openBtn.disabled = true;
+
+    row.appendChild(info);
+    row.appendChild(openBtn);
+    openFileList.appendChild(row);
+  });
+}
+
+async function loadOpenFileList() {
+  openFileError.textContent = '';
+  setOpenListEmpty('加载中……');
+  try {
+    const res = await fetch('/api/posts', { cache: 'no-store' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const grouped = await res.json();
+    const all = [];
+    Object.keys(CATEGORY_NAMES).forEach((cat) => {
+      (grouped[cat] || []).forEach((p) => all.push(p));
+    });
+    all.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    renderOpenItems(all);
+  } catch (err) {
+    setOpenListEmpty('获取列表失败（需在站点后端环境下使用）');
+  }
+}
+
+function openOpenFileDialog() {
+  openFileError.textContent = '';
+  openFileModal.classList.remove('hidden');
+  loadOpenFileList();
+}
+
+function closeOpenFileDialog() {
+  openFileModal.classList.add('hidden');
+}
+
+/* 打开一篇已发布文章：取回原始 Markdown → 载入编辑器 → 标记「编辑」状态 */
+async function openPublishedPost(slug, title) {
+  openFileError.textContent = '';
+  try {
+    const res = await fetch('/api/post?slug=' + encodeURIComponent(slug) + '&md=1', { cache: 'no-store' });
+    if (!res.ok) { openFileError.textContent = '打开失败（HTTP ' + res.status + '）'; return; }
+    const data = await res.json();
+    if (!data || !data.md) {
+      openFileError.textContent = '该文章为旧版本发布，未保存原始 Markdown，无法直接编辑';
+      return;
+    }
+    // 按文章分类切到对应模板（梦→dream、梦呓→murmur、醒→wake），保证预览一致
+    const tplId = PUBLISH_TEMPLATE[data.category];
+    if (tplId && TPL_MAP[tplId]) {
+      currentTpl = tplId;
+      tplSelect.value = tplId;
+      lsSet(KEY.tpl, currentTpl);
+    }
+    loadIntoEditor(data.md);
+    editingSlug = slug;
+    editingTitle = title || data.title || '';
+    editingCategory = ['dream', 'murmur', 'awake'].includes(data.category) ? data.category : '';
+    syncPublishEditUi();
+    closeOpenFileDialog();
+    toast('已打开：《' + editingTitle + '》');
+  } catch (err) {
+    openFileError.textContent = '网络错误';
+  }
+}
+
+/* 本地文件读取（FileReader，纯前端读取，不上传） */
+function openLocalFiles(fileList) {
+  const file = fileList && fileList[0];
+  if (!file) return;
+  const okType = /^text\/(plain|markdown)$/.test(file.type || '');
+  const okName = /\.(md|txt)$/i.test(file.name);
+  if (!okType && !okName) {
+    openFileError.textContent = '仅支持 .md / .txt 类型文件';
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = () => {
+    loadIntoEditor(String(reader.result || ''));
+    editingSlug = null;   // 本地文件不属于「已发布文章」
+    editingTitle = '';
+    editingCategory = '';
+    syncPublishEditUi();
+    closeOpenFileDialog();
+    toast('已打开：' + file.name);
+  };
+  reader.onerror = () => { openFileError.textContent = '读取文件失败，请重试'; };
+  reader.readAsText(file, 'utf-8');
+}
+
+/* 用新文本替换编辑器内容：清撤销栈 + 触发统一 input 处理（渲染/保存/字数） */
+function loadIntoEditor(text) {
+  undoStack.length = 0;
+  editor.value = text;
+  syncUndoBtn();
+  afterEdit();
+}
+
+/* 根据 editingSlug 显示/隐藏发布框里的「更新原文」提示与「另存为新文章」勾选 */
+function syncPublishEditUi() {
+  if (editingSlug) {
+    pubEditHint.textContent = '将更新已发布文章《' + editingTitle + '》（保留原发布时间与链接）';
+    pubEditHint.classList.remove('hidden');
+    pubNewField.classList.remove('hidden');
+  } else {
+    pubEditHint.classList.add('hidden');
+    pubNewField.classList.add('hidden');
+  }
+}
+
 /* ---------------- 9. 移动端：预览 / 编辑切换 ---------------- */
 function toggleMobileView() {
   const show = app.classList.toggle('show-preview');
@@ -1413,11 +1593,25 @@ function init() {
     const btn = e.target.closest('.manage-del');
     if (btn && !btn.disabled) deleteManagedPost(btn.dataset.slug, btn.dataset.title);
   });
+  openFileBtn.addEventListener('click', openOpenFileDialog);
+  openFilePickBtn.addEventListener('click', () => localFileInput.click());
+  openFileModal.addEventListener('click', (e) => {
+    if (e.target.closest('[data-close-open]')) closeOpenFileDialog();
+  });
+  openFileList.addEventListener('click', (e) => {
+    const btn = e.target.closest('.manage-open');
+    if (btn && !btn.disabled) openPublishedPost(btn.dataset.slug, btn.dataset.title);
+  });
+  localFileInput.addEventListener('change', () => {
+    openLocalFiles(localFileInput.files);
+    localFileInput.value = '';   // 允许下次再选同一文件
+  });
   publishForm.addEventListener('submit', (e) => { e.preventDefault(); publishPost(); });
   window.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
     if (!publishModal.classList.contains('hidden')) closePublishDialog();
     if (!manageModal.classList.contains('hidden')) closeManageDialog();
+    if (!openFileModal.classList.contains('hidden')) closeOpenFileDialog();
   });
   mobileToggle.addEventListener('click', toggleMobileView);
 

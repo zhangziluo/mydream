@@ -386,6 +386,66 @@ button { font-family: inherit; }
 .manage-del:hover { background: #fee2e2; border-color: #dc2626; }
 .manage-del:disabled { opacity: 0.5; cursor: default; }
 
+/* ---------- 打开文件对话框 ---------- */
+.openfile-card { width: 460px; }
+.openfile-section { margin-bottom: 14px; }
+.openfile-section .field-label { margin-bottom: 6px; }
+
+.openfile-local {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  height: auto;
+  padding: 9px 10px;
+  border: 1px dashed var(--accent);
+  background: #f5f8ff;
+  color: var(--accent);
+  font-size: 13px;
+  cursor: pointer;
+}
+.openfile-local:hover { background: #eaf1ff; }
+
+.manage-open {
+  flex: none;
+  padding: 5px 12px;
+  font-size: 12px;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+  background: #eff6ff;
+  color: var(--accent);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.manage-open:hover { background: #dbeafe; border-color: var(--accent); }
+.manage-open:disabled { opacity: 0.55; cursor: default; }
+
+/* ---------- 发布框：编辑已发布文章提示 + 另存为新文章 ---------- */
+.pub-edit-hint {
+  margin: 0 0 12px;
+  padding: 8px 10px;
+  border: 1px solid #bfdbfe;
+  border-radius: var(--radius);
+  background: #eff6ff;
+  color: #1e40af;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.pub-new-field {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: #fafbfc;
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+  user-select: none;
+}
+.pub-new-field input { accent-color: var(--accent); }
+
 /* ---------- 移动端适配 ---------- */
 @media (max-width: 820px) {
   .topbar { padding: 0 8px; gap: 4px; }

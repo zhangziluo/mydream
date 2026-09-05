@@ -50,6 +50,7 @@
     <button type="button" id="mobileToggle" class="btn">👁 预览</button>
     <button type="button" id="publishBtn" class="btn" title="发布到主页">📤 发布</button>
     <button type="button" id="manageBtn" class="btn" title="管理已发布文章">🗂 已发布</button>
+    <button type="button" id="openFileBtn" class="btn" title="打开本地 .md/.txt 文件或已发布文章">📂 打开文件</button>
     <button type="button" id="exportBtn" class="btn primary">⬇ 导出 HTML</button>
   </header>
 
@@ -120,6 +121,13 @@
       <input type="password" id="pubPassword" placeholder="请输入发布密码">
     </label>
 
+    <div id="pubEditHint" class="pub-edit-hint hidden"></div>
+
+    <label class="pub-new-field hidden" id="pubNewField">
+      <input type="checkbox" id="pubNewPost">
+      <span>另存为新文章（不覆盖原文，发布为新的一篇）</span>
+    </label>
+
     <div id="pubError" class="modal-error"></div>
 
     <div class="modal-actions">
@@ -149,6 +157,34 @@
 
     <div class="modal-actions">
       <button type="button" class="btn" data-close-manage="1">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= 打开文件对话框 ================= -->
+<div id="openFileModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="openFileTitle">
+  <div class="modal-mask" data-close-open="1"></div>
+  <div class="modal-card openfile-card">
+    <h2 id="openFileTitle">打开文件</h2>
+    <p class="modal-sub">从本地选择 Markdown / 纯文本文件，或打开一篇已发布文章继续编辑。</p>
+
+    <div class="openfile-section">
+      <span class="field-label">本地文件</span>
+      <button type="button" class="btn openfile-local" id="openFilePickBtn">🗎 选择本地 .md / .txt 文件</button>
+      <input type="file" id="localFileInput" accept=".md,.txt,text/markdown,text/plain" hidden>
+    </div>
+
+    <div class="openfile-section">
+      <span class="field-label">已发布文章 · 点「打开」载入编辑器</span>
+      <div id="openFileList" class="manage-list">
+        <div class="manage-empty">加载中……</div>
+      </div>
+    </div>
+
+    <div id="openFileError" class="modal-error"></div>
+
+    <div class="modal-actions">
+      <button type="button" class="btn" data-close-open="1">关闭</button>
     </div>
   </div>
 </div>

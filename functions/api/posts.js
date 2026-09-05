@@ -6,8 +6,9 @@
      GET /api/posts?category=dream|murmur|awake → 该分类扁平数组
         （分类管理页/瀑布流用，按 createdAt 降序）
 
-   每项含 { slug, title, note, category, createdAt, text }
-   —— text 为正文去标签后的纯文本（供分类页全文搜索）。
+   每项含 { slug, title, note, category, createdAt, text, hasMd }
+   —— text 为正文去标签后的纯文本（供分类页全文搜索）；
+   hasMd = 是否存有原始 Markdown（写作工具「打开文件」可编辑标记）。
    ========================================================= */
 const CATEGORIES = ['dream', 'murmur', 'awake'];
 
@@ -50,6 +51,7 @@ export async function onRequestGet({ request, env }) {
           category: cat,
           createdAt: Number(r.createdAt) || 0,
           text: stripToText(r.content || ''),
+          hasMd: Boolean(r.md),
         };
       } catch (e) {
         return null;
