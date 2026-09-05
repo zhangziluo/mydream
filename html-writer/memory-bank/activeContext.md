@@ -1,6 +1,19 @@
 # 当前进度（Active Context）
 
-> 续写项目时**最先看本文件**。最近会话的四轮改动均已完成并通过验证，无遗留的半成品改动。
+> 续写项目时**最先看本文件**。最近会话的五轮改动均已完成并通过验证，无遗留的半成品改动。
+
+## 第五轮：可删除已发布的文章（2026-09-05）
+
+在 html-writer 加「🗂 已发布」发布管理入口（用户确认放 html-writer 内）。要点：
+
+1. **后端**：
+   - 新增 `functions/_shared/auth.js`：把「一次性 nonce 校验 + HMAC-SHA256 签名校验」抽成 `verifyChallenge(env, kv, nonce, digest)`，`publish.js` 与 `post.js` 共用（原来 publish.js 内联的实现已删除，避免两处复制）。
+   - `functions/api/post.js` 新增 `onRequestDelete`：`DELETE /api/post?slug=<slug>`，body 携带 `{ nonce, digest }`（与发布同一鉴权）；校验通过后删除 KV `post:<slug>`；文章不存在返回 404。GET 阅读保持不变。
+2. **前端（html-writer）**：顶栏新增 `#manageBtn`（🗂 已发布，位于 发布 与 导出 之间）+ `#manageModal` 发布管理对话框：打开即 `GET /api/posts` 按时间倒序列出（标题/分类/时间 + 删除按钮）；删除时输入发布密码 → 领取 nonce → 本机 HMAC 签名 → DELETE；成功 toast「已删除」并刷新列表，401 红字「密码错误」，fetch 异常「网络错误」。样式新增 `.manage-*`（含空态、列表滚动、危险按钮），移动端顶栏进一步收紧（隐藏品牌图标、压缩模板下拉）。
+   - 注意：html-writer 页面位于 `/html-writer/`，管理列表/删除的 fetch 一律用**绝对路径** `/api/posts`、`/api/post?slug=`（相对路径会命中 `/html-writer/api/...` 404）。
+3. **验证**：本地 `wrangler pages dev` 端到端（发布→列表 1 篇→错密码删除 401→正确删除 200→再删 404→阅读 404→列表清空）✅；已提交推送并线上复验。
+
+> 经验（重要）：`wrangler kv` CLI 在仓库含 `wrangler.toml` 时会读写**本地模拟**而非线上 namespace，切勿用它判断线上 KV 内容/删除线上键——线上 KV 操作请走 REST API（`/accounts/{acct}/storage/kv/namespaces/{ns}/values/...`）。
 
 ## 第四轮：发布到主页（2026-09-05）
 

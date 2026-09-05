@@ -334,12 +334,65 @@ button { font-family: inherit; }
   gap: 8px;
 }
 
+/* ---------- 发布管理（已发布文章列表） ---------- */
+.manage-card { width: 460px; }
+.manage-list {
+  max-height: 42vh;
+  overflow-y: auto;
+  margin: 0 0 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.manage-empty {
+  padding: 22px 12px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+  letter-spacing: 0.15em;
+}
+.manage-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.manage-item:last-child { border-bottom: 0; }
+.manage-info { flex: 1; min-width: 0; }
+.manage-title {
+  display: block;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.manage-meta {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.manage-del {
+  flex: none;
+  padding: 5px 12px;
+  font-size: 12px;
+  border: 1px solid #f3c6c6;
+  border-radius: 6px;
+  background: #fff5f5;
+  color: #b91c1c;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.manage-del:hover { background: #fee2e2; border-color: #dc2626; }
+.manage-del:disabled { opacity: 0.5; cursor: default; }
+
 /* ---------- 移动端适配 ---------- */
 @media (max-width: 820px) {
-  .topbar { padding: 0 8px; gap: 6px; }
+  .topbar { padding: 0 8px; gap: 4px; }
   .brand-name { display: none; }
+  .brand::before { display: none; }
   .tpl-label { display: none; }
-  #tplSelect { max-width: 92px; }
+  #tplSelect { max-width: 78px; }
   #mobileToggle { display: inline-flex; }
   .topbar .btn { padding: 0 7px; font-size: 12px; }
 

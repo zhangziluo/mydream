@@ -21,10 +21,11 @@ html-writer/
 仓库根（发布根）另含第四轮发布相关文件：
 ```
 functions/
-├── api/challenge.js     # GET  /api/challenge（发布前领取一次性 nonce）
-├── api/publish.js       # POST /api/publish（HMAC 校验签名→存 KV post:<slug>）
+├── _shared/auth.js      # 共用鉴权 verifyChallenge（nonce+HMAC），publish/post 删除共用
+├── api/challenge.js     # GET  /api/challenge（发布/删除前领取一次性 nonce）
+├── api/publish.js       # POST /api/publish（HMAC 校验→存 KV post:<slug>）
 ├── api/posts.js         # GET  /api/posts（KV 列表→按 dream/murmur/awake 分组）
-└── api/post.js          # GET  /api/post?slug=（返回存好的单文件 HTML）
+└── api/post.js          # GET ?slug= 阅读；DELETE ?slug= 删除（HMAC 校验）
 wrangler.toml            # KV 绑定声明 + 本地联调说明
 .dev.vars                # 本地 PUBLISH_PASSWORD（已 gitignore）
 ```
@@ -61,9 +62,9 @@ wrangler.toml            # KV 绑定声明 + 本地联调说明
 ### 模板系统（三处登记）
 模板要同时出现在：① `TEMPLATES` 常量；② `index.html` 的 `<select id="tplSelect">`；③ `EMBEDDED_CSS` 的 `templates/<id>.css` 键（仅 file:// 导出兜底需要）。样式优先级：`preview.css`（基础）→ `templates/*.css`（覆盖）。
 
-### 发布系统（第四轮，仓库根 functions/ + 首页动态）
-- 「发布」= 把正文渲染成**所选分类对应模板的单文件 HTML**（前端 `buildStandaloneDoc` 输出即 `content`，含内联 CSS 与 `<title>`）→ 经**挑战-应答 HMAC-SHA256** 授权后存 KV。
-- **安全模型（无明文密码上线）**：① 前端 GET `/api/challenge` 领取一次性 nonce（KV 登记、120s 过期、用后即删）；② 发布密码**只在本机**与 nonce 算 HMAC-SHA256 → POST `{title, content, category, nonce, digest}`；③ 后端用 `env.PUBLISH_PASSWORD` 重新计算并 `crypto.subtle.verify`（常量时间）。明文密码永不出浏览器，digest 不可重放；`PUBLISH_PASSWORD` 仅存 CF 密钥（**不是**页面访问密码 `PASSWORD`）。
+### 发布系统（第四轮，仓库根 functions/ + 首页动态；第五轮加删除）
+- 「发布」= 把正文渲染成**所选分类对应模板的单文件 HTML**（前端 `buildStandaloneDoc` 输出即 `content`，含内联 CSS 与 `<title>`）→ 经**挑战-应答 HMAC-SHA256** 授权后存 KV；「删除」= `DELETE /api/post?slug=` 走同一鉴权删 KV。
+- **安全模型（无明文密码上线）**：① 前端 GET `/api/challenge` 领取一次性 nonce（KV 登记、120s 过期、用后即删）；② 发布密码**只在本机**与 nonce 算 HMAC-SHA256 → 请求携带 `{..., nonce, digest}`；③ 后端 `verifyChallenge()`（见 `_shared/auth.js`，发布与删除共用）用 `env.PUBLISH_PASSWORD` 重新计算并 `crypto.subtle.verify`（常量时间）。明文密码永不出浏览器，digest 不可重放；`PUBLISH_PASSWORD` 仅存 CF 密钥（**不是**页面访问密码 `PASSWORD`）。
 - KV：键 `post:<slug>`（slug = 标题 sanitize（ASCII）+ 时间戳），值 JSON `{slug,title,category,content,note,createdAt}`；note 由后端从 HTML 首 `<p>` 提取（思路同根目录 build.js）。挑战 nonce 键：`challenge:<nonce>`。
 - 阅读链路：首页 `assets/main.js` fetch `api/posts`（GET 分组列表）→ 追加 `.work` 卡片（链接 `api/post?slug=`）→ GET `api/post` 原样返回存好的 HTML。发布失败/未配置后端时首页与 html-writer 均静默降级，不影响纯静态使用。
 - 前端分类→模板：`PUBLISH_TEMPLATE = { dream:'dream', murmur:'murmur', awake:'wake' }`（注意站点分类键 `awake` 对应模板 `wake`）。HMAC 依赖 `crypto.subtle`（HTTPS/localhost 才可用；file:// 发布本就无后端，提示网络错误）。

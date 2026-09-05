@@ -49,6 +49,7 @@
 
     <button type="button" id="mobileToggle" class="btn">👁 预览</button>
     <button type="button" id="publishBtn" class="btn" title="发布到主页">📤 发布</button>
+    <button type="button" id="manageBtn" class="btn" title="管理已发布文章">🗂 已发布</button>
     <button type="button" id="exportBtn" class="btn primary">⬇ 导出 HTML</button>
   </header>
 
@@ -126,6 +127,30 @@
       <button type="submit" class="btn primary" id="pubSubmit">发布</button>
     </div>
   </form>
+</div>
+
+<!-- ================= 发布管理对话框 ================= -->
+<div id="manageModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="manageTitle">
+  <div class="modal-mask" data-close-manage="1"></div>
+  <div class="modal-card manage-card">
+    <h2 id="manageTitle">已发布文章</h2>
+    <p class="modal-sub">管理发布到主页的文章。删除需验证发布密码。</p>
+
+    <div id="manageList" class="manage-list">
+      <div class="manage-empty">加载中……</div>
+    </div>
+
+    <label class="field">
+      <span class="field-label">发布密码（删除时使用）</span>
+      <input type="password" id="managePassword" placeholder="请输入发布密码" autocomplete="off">
+    </label>
+
+    <div id="manageError" class="modal-error"></div>
+
+    <div class="modal-actions">
+      <button type="button" class="btn" data-close-manage="1">关闭</button>
+    </div>
+  </div>
 </div>
 
 <div id="toast" class="toast"></div>

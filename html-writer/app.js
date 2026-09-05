@@ -45,6 +45,9 @@ TEMPLATES.forEach((t) => { TPL_MAP[t.id] = t; });
 const PUBLISH_TEMPLATE = { dream: 'dream', murmur: 'murmur', awake: 'wake' };
 const PUBLISH_API = '/api/publish';
 
+// 站点分类 → 中文名（发布管理列表展示用）
+const CATEGORY_NAMES = { dream: '梦', murmur: '梦呓', awake: '醒' };
+
 // 首次使用（localStorage 为空）时给出的示例文章
 const SAMPLE_MD = [
   '# 我的第一篇文档',
@@ -743,6 +746,11 @@ const pubTitle      = $('pubTitle');
 const pubPassword   = $('pubPassword');
 const pubError      = $('pubError');
 const pubSubmit     = $('pubSubmit');
+const manageBtn     = $('manageBtn');
+const manageModal   = $('manageModal');
+const manageList    = $('manageList');
+const managePassword = $('managePassword');
+const manageError   = $('manageError');
 const mobileToggle  = $('mobileToggle');
 const wordCount     = $('wordCount');
 const toastEl       = $('toast');
@@ -1120,12 +1128,13 @@ function download(filename, content) {
   setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1000);
 }
 
-/* ---------------- 8. 发布到主页（/api/publish） ----------------
-   把正文渲染为「所选分类对应模板」的单文件 HTML（与导出同构）。
+/* ---------------- 8. 发布到主页 / 发布管理（/api/publish、/api/post DELETE） ----------------
+   发布：把正文渲染为「所选分类对应模板」的单文件 HTML（与导出同构）。
+   管理：🗂 已发布 → GET /api/posts 列表，删除走 DELETE /api/post?slug=。
    安全流程：先 GET /api/challenge 取一次性 nonce → 用发布密码在本机
-   算 HMAC-SHA256 签名 → POST { title, content, category, nonce, digest }
+   算 HMAC-SHA256 签名 → 请求携带 { ..., nonce, digest }
    —— 明文密码永不上传；签名一次性、不可重放。
-   成功 → toast「发布成功」；签名错 → 红字「密码错误」；网络异常 → 「网络错误」。 */
+   成功 → toast「发布成功 / 已删除」；签名错 → 红字「密码错误」；网络异常 → 「网络错误」。 */
 function guessTitle() {
   const m = editor.value.match(/^\s*#\s+(.+)$/m);
   let t = m ? m[1].trim() : '';
@@ -1230,6 +1239,125 @@ async function publishPost() {
   }
 }
 
+/* ---------- 发布管理（列表 + 删除，鉴权同发布：一次性 nonce + HMAC） ---------- */
+function fmtManageDate(ts) {
+  const d = new Date(ts);
+  const p = (n) => String(n).padStart(2, '0');
+  return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate())
+    + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+}
+
+function setManageEmpty(text) {
+  manageList.textContent = '';
+  const empty = document.createElement('div');
+  empty.className = 'manage-empty';
+  empty.textContent = text;
+  manageList.appendChild(empty);
+}
+
+function renderManageItems(items) {
+  manageList.textContent = '';
+  if (!items.length) { setManageEmpty('还没有已发布的文章'); return; }
+  items.forEach((p) => {
+    const row = document.createElement('div');
+    row.className = 'manage-item';
+
+    const info = document.createElement('div');
+    info.className = 'manage-info';
+    const titleEl = document.createElement('span');
+    titleEl.className = 'manage-title';
+    titleEl.textContent = '《' + p.title + '》';
+    const metaEl = document.createElement('span');
+    metaEl.className = 'manage-meta';
+    metaEl.textContent = (CATEGORY_NAMES[p.category] || p.category) + ' · ' + fmtManageDate(p.createdAt);
+    info.appendChild(titleEl);
+    info.appendChild(metaEl);
+
+    const delBtn = document.createElement('button');
+    delBtn.type = 'button';
+    delBtn.className = 'manage-del';
+    delBtn.dataset.slug = p.slug;
+    delBtn.dataset.title = p.title;
+    delBtn.textContent = '删除';
+
+    row.appendChild(info);
+    row.appendChild(delBtn);
+    manageList.appendChild(row);
+  });
+}
+
+async function loadManageList() {
+  manageError.textContent = '';
+  setManageEmpty('加载中……');
+  try {
+    const res = await fetch('/api/posts', { cache: 'no-store' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const grouped = await res.json();
+    const all = [];
+    Object.keys(CATEGORY_NAMES).forEach((cat) => {
+      (grouped[cat] || []).forEach((p) => all.push(p));
+    });
+    all.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    renderManageItems(all);
+  } catch (err) {
+    setManageEmpty('获取列表失败（需在站点后端环境下使用）');
+  }
+}
+
+function openManageDialog() {
+  managePassword.value = '';
+  manageError.textContent = '';
+  manageModal.classList.remove('hidden');
+  loadManageList();
+}
+
+function closeManageDialog() {
+  manageModal.classList.add('hidden');
+}
+
+async function deleteManagedPost(slug, title) {
+  const password = managePassword.value.trim();
+  if (!password) { manageError.textContent = '请先输入发布密码'; managePassword.focus(); return; }
+  if (!window.confirm('删除《' + title + '》？此操作不可恢复。')) return;
+  if (!window.crypto || !window.crypto.subtle) {
+    manageError.textContent = '当前环境不支持安全操作（需 HTTPS）';
+    return;
+  }
+  manageError.textContent = '';
+  const delBtn = manageList.querySelector('.manage-del[data-slug="' + slug + '"]');
+  if (delBtn) delBtn.disabled = true;
+  try {
+    // 领取一次性 nonce → 密码在本机签名 → DELETE
+    const ch = await fetch('/api/challenge', { cache: 'no-store' });
+    if (!ch.ok) throw new Error('challenge ' + ch.status);
+    const chData = await ch.json();
+    if (!chData || !chData.nonce) throw new Error('no nonce');
+    const digest = await hmacSha256Hex(password, chData.nonce);
+
+    const res = await fetch('/api/post?slug=' + encodeURIComponent(slug), {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nonce: chData.nonce, digest }),
+    });
+    if (res.ok) { toast('已删除'); loadManageList(); return; }
+    let serverMsg = '';
+    try {
+      const data = await res.json();
+      serverMsg = (data && (data.error || data.message)) || '';
+    } catch (e) { /* ignore */ }
+    if (res.status === 401 || res.status === 403 || /密码错误/.test(serverMsg)) {
+      manageError.textContent = '密码错误';
+    } else {
+      manageError.textContent = serverMsg || ('删除失败（HTTP ' + res.status + '）');
+      if (res.status === 404) loadManageList();   // 已被删：刷新列表
+    }
+  } catch (err) {
+    manageError.textContent = '网络错误';
+  } finally {
+    if (delBtn) delBtn.disabled = false;
+  }
+}
+
 /* ---------------- 9. 移动端：预览 / 编辑切换 ---------------- */
 function toggleMobileView() {
   const show = app.classList.toggle('show-preview');
@@ -1277,9 +1405,19 @@ function init() {
   publishModal.addEventListener('click', (e) => {
     if (e.target.closest('[data-close]')) closePublishDialog();
   });
+  manageBtn.addEventListener('click', openManageDialog);
+  manageModal.addEventListener('click', (e) => {
+    if (e.target.closest('[data-close-manage]')) closeManageDialog();
+  });
+  manageList.addEventListener('click', (e) => {
+    const btn = e.target.closest('.manage-del');
+    if (btn && !btn.disabled) deleteManagedPost(btn.dataset.slug, btn.dataset.title);
+  });
   publishForm.addEventListener('submit', (e) => { e.preventDefault(); publishPost(); });
   window.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && !publishModal.classList.contains('hidden')) closePublishDialog();
+    if (e.key !== 'Escape') return;
+    if (!publishModal.classList.contains('hidden')) closePublishDialog();
+    if (!manageModal.classList.contains('hidden')) closeManageDialog();
   });
   mobileToggle.addEventListener('click', toggleMobileView);
 
