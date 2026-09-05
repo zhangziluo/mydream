@@ -1,6 +1,24 @@
 # 当前进度（Active Context）
 
-> 续写项目时**最先看本文件**。最近会话的五轮改动均已完成并通过验证，无遗留的半成品改动。
+> 续写项目时**最先看本文件**。最近会话的六轮改动均已完成并通过验证，无遗留的半成品改动。
+
+## 第六轮：首页限 2 篇 + 分类管理页（瀑布流 + 全文搜索）（2026-09-05）
+
+用户确认：分类页**只展示已发布（KV）文章**；首页静态 build.js 卡片保留不动（2 篇上限只作用于已发布文章）。
+
+1. **后端 `functions/api/posts.js`**：
+   - 支持 `?category=dream|murmur|awake` → 返回该分类扁平数组（按 createdAt 倒序），无参数保持分组结构（首页用）。
+   - 每项新增 `text` = 正文去 `<style>/<script>`、去标签、折叠空白后的纯文本，供分类页全文搜索。
+2. **首页**：
+   - `assets/main.js`：每个栏目动态文章 `slice(0,2)`（最新 2 篇），静态卡片不动。
+   - `index.html`：三栏 `<h2>` 标题改为链接（`.col-title-link` → `dream/murmur/awake.html`），每栏列表后加「查看全部 →」（`.col-more`）。
+   - `assets/style.css`：新增 `.col-title-link`、`.col-more` 样式（hover 用栏目 `--accent`）。
+3. **分类管理页（新文件，每个分类一页）**：
+   - `dream.html` / `murmur.html` / `awake.html`（根目录，`<body data-category="dream|murmur|awake">` 区分）。
+   - `assets/category.css`：延续首页「星月夜→向日葵」渐变背景 + 顶部返回/标题/搜索框 + **CSS 多列瀑布流**（1/2/3 列响应式，卡片 `break-inside: avoid`）+ 空态 + 移动端竖排背景。
+   - `assets/category.js`：按 `data-category` 拉 `/api/posts?category=` → 渲染卡片（《标题》/摘要/日期 → `/api/post?slug=` 阅读）；搜索框按**标题 + 正文全文**本地过滤（中文子串 + 空格多关键词 AND，160ms 防抖），实时显示「共 N 篇 / 命中 M 篇」。
+   - 注意：CF Pages 会把 `/xxx.html` 308 重定向到干净路径 `/xxx`（`/dream` 200），相对资源在无后缀路径下仍从根解析，正常。
+4. **验证**：本地 `wrangler pages dev`：发布 3 梦 +1 呓语 → `/api/posts` 分组含 text、`?category=dream` 倒序 3 篇、text 含正文独特词、分类页/资源 200、首页含 6 处入口链接 ✅。已推送线上复验。
 
 ## 第五轮：可删除已发布的文章（2026-09-05）
 

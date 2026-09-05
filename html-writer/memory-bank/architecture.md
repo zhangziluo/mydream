@@ -24,7 +24,7 @@ functions/
 ├── _shared/auth.js      # 共用鉴权 verifyChallenge（nonce+HMAC），publish/post 删除共用
 ├── api/challenge.js     # GET  /api/challenge（发布/删除前领取一次性 nonce）
 ├── api/publish.js       # POST /api/publish（HMAC 校验→存 KV post:<slug>）
-├── api/posts.js         # GET  /api/posts（KV 列表→按 dream/murmur/awake 分组）
+├── api/posts.js         # GET /api/posts（分组）；?category= → 扁平数组；含 text 全文（分类页搜索用）
 └── api/post.js          # GET ?slug= 阅读；DELETE ?slug= 删除（HMAC 校验）
 wrangler.toml            # KV 绑定声明 + 本地联调说明
 .dev.vars                # 本地 PUBLISH_PASSWORD（已 gitignore）

@@ -92,7 +92,8 @@
         if (empty) empty.remove();
 
         var anchor = ul.querySelector('li');   // 静态卡片锚点（可能为 null）
-        list.forEach(function (post) {
+        // 每栏只展示最新 2 篇已发布文章，更多请进入分类管理页（dream/murmur/awake.html）
+        list.slice(0, 2).forEach(function (post) {
           ul.insertBefore(createCard(post), anchor);
         });
       });

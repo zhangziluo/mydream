@@ -3,6 +3,7 @@
 ## 已完成（近期新增功能，回顾见 activeContext）
 - [x] **发布到主页**（2026-09-05）：html-writer「📤 发布」+ `/api/challenge`（一次性 nonce）+ `/api/publish`（HMAC-SHA256 签名校验，明文密码不上传）+ `/api/posts` + `/api/post`（KV 存储）+ 首页动态渲染。
 - [x] **删除已发布文章**（2026-09-05）：html-writer「🗂 已发布」管理对话框（列表 + 删除），`DELETE /api/post?slug=` 走同一 HMAC 鉴权；抽公共 `functions/_shared/auth.js`。
+- [x] **首页限 2 篇 + 分类管理页**（2026-09-05）：首页每栏动态文章最多 2 篇 +「查看全部→」；新增 `dream.html/murmur.html/awake.html`（瀑布流卡片 + 标题/全文搜索，共享 `assets/category.css|js`）；`/api/posts` 支持 `?category=` 并返回 `text`。
   - **上线前待做**：Cloudflare 控制台创建 KV namespace 并绑定 `MYDREAM_KV`、添加密钥 `PUBLISH_PASSWORD`；wrangler.toml 里已留占位与说明。
 
 ## 可选的下一步（按价值排序）
