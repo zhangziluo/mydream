@@ -18,7 +18,7 @@ html-writer/
 └── memory-bank/         # ← 本目录
 ```
 
-仓库根（发布根）另含第四轮发布相关文件：
+仓库根（发布根）另含发布相关文件：
 ```
 functions/
 ├── _shared/auth.js      # 共用鉴权 verifyChallenge（nonce+HMAC），publish/post 删除共用
@@ -26,23 +26,30 @@ functions/
 ├── api/publish.js       # POST /api/publish（HMAC 校验→存 KV post:<slug>）
 ├── api/posts.js         # GET /api/posts（分组）；?category= → 扁平数组；含 text 全文（分类页搜索用）
 └── api/post.js          # GET ?slug= 阅读；DELETE ?slug= 删除（HMAC 校验）
+index.html               # 首页（build.js 生成静态卡片占位；每栏动态显示最新 2 篇已发布文章）
+dream.html / murmur.html / awake.html   # 分类管理页（data-category 区分）
+assets/main.js           # 首页：拉 /api/posts，每栏 slice(0,2) 追加卡片
+assets/category.js|css   # 分类页：瀑布流卡片 + 标题/正文全文搜索
+assets/style.css         # 首页与分类页共用视觉（--dream/murmur/wake、.col 等）
+build.js                 # 扫描 dream/whisper/awake 目录生成静态卡片（当前目录全空，输出 0 张）
+dream/ whisper/ awake/   # 静态板块目录（当前为空，发布已走 KV）
 wrangler.toml            # KV 绑定声明 + 本地联调说明
 .dev.vars                # 本地 PUBLISH_PASSWORD（已 gitignore）
 ```
 
 ## app.js 内部结构（按注释分区）
 
-1. **配置**：`PASSWORD`（'2026'）、`KEY`（localStorage 键：hw_auth / hw_content / hw_tpl）、`TEMPLATES[]`（id/name/file）+ `TPL_MAP`、`SAMPLE_MD`（首启示例）。
-2. **内置样式副本** `EMBEDDED_CSS`（键 = 文件路径），含 `EMBEDDED_PREVIEW/MINIMAL/MAGAZINE/CODE_CSS` 四份 —— **与 css 文件字节级一致**（见「坑 5」）。
+1. **配置**：`PASSWORD`（当前 `'19930214'`，勿与发布密钥混淆）、`KEY`（localStorage 键：hw_auth / hw_content / hw_tpl）、`TEMPLATES[]`（id/name/file）+ `TPL_MAP`、`SAMPLE_MD`（首启示例）、`PUBLISH_TEMPLATE`/`CATEGORY_NAMES`（分类→模板/中文名）。
+2. **内置样式副本** `EMBEDDED_*_CSS`：`EMBEDDED_PREVIEW_CSS` + 每个模板一份（minimal/magazine/code/dream/murmur/wake，共 7 份），键 = 文件路径 —— **与 css 文件字节级一致**（见「坑 3」）。
 2.5 **字号控件**：`FS_CTRL_CSS` + `FS_CTRL_HTML`（见「字号控件」节）。
 3. DOM 引用 + 工具（`lsGet/lsSet` 带 try/catch、toast、`markedReady/ensureMarked`：`setOptions({gfm:true, breaks:true})`）。
 4. **密码**：`submitPassword()` → 写 hw_auth → `enterApp()`（恢复内容/模板、渲染、聚焦）。
 5. **工具栏**：`runCommand(cmd)`；`snapshot/undo/syncUndoBtn`（撤销栈上限 100，仅工具栏操作入栈）；`wrapSel`（占位符自动选中）；`prefixLines`（多行逐行加/去前缀 toggle）；`insertCodeBlock/insertLink/insertImage/insertHr`；`updateWordCount`（去空白计数）；`scheduleSave`（400ms 防抖）。
 6. **实时预览**：`previewDocHtml()` → `render()`（doc.write 进 iframe，防抖 200ms，渲染后尽量恢复滚动位置）。
 7. **导出**：`readCssText`（fetch→EMBEDDED 兜底，带缓存 cssCache）→ `exportHtml` → `buildStandaloneDoc()` → `download()`（Blob+`<a download>`）；`makeTitle`、`escapeHtml`。
-8. **发布到主页**：`guessTitle`（首行 `# 标题`）→ `openPublishDialog/closePublishDialog` → `publishPost()`：按分类模板（PUBLISH_TEMPLATE：dream/murmur/awake→dream/murmur/wake）渲染单文件 HTML → `fetch('/api/publish')` → 成功 toast「发布成功」/ 401 红字「密码错误」/ fetch 异常「网络错误」。
+8. **发布到主页 + 发布管理**：`guessTitle`（首行 `# 标题`）→ `publishPost()`（按 PUBLISH_TEMPLATE 渲染单文件 HTML → `/api/challenge` 取 nonce → 本机 HMAC → POST `/api/publish`）；管理：`openManageDialog/closeManageDialog` → `loadManageList`（GET `/api/posts` 绝对路径）→ `deleteManagedPost`（confirm + nonce/HMAC → DELETE `/api/post?slug=`）；共用 `hmacSha256Hex`。成功 toast「发布成功 / 已删除」/ 401 红字「密码错误」/ fetch 异常「网络错误」。
 9. **移动端**：`toggleMobileView/syncMobileBtn`（`#app.show-preview`）。
-10. `init()`：登录判定 + 全部事件绑定（含发布按钮/弹窗/表单/Esc），脚本尾部直接执行。
+10. `init()`：登录判定 + 全部事件绑定（发布/管理按钮、两个 modal 开关、委托删除、Esc 双弹窗、撤销/导出/预览切换等），脚本尾部直接执行。
 
 ## 关键机制
 
@@ -83,6 +90,7 @@ wrangler.toml            # KV 绑定声明 + 本地联调说明
 
 ## 运行 / 部署
 - 本地：双击 `index.html`（需联网加载 marked；file:// 下「发布」会因无后端提示网络错误，属预期）；`python3 -m http.server` 亦可。
-- 发布相关本地联调：`npx wrangler pages dev . --kv MYDREAM_KV`（发布密码放 `.dev.vars` 的 `PUBLISH_PASSWORD`）。
-- Cloudflare Pages：整目录推送，Functions 自动生效；**发布功能上线前需在控制台绑定 KV `MYDREAM_KV` 并配置密钥 `PUBLISH_PASSWORD`**（详见 activeContext 第四轮）。
-- 页面访问密码改法：`app.js` 顶部 `PASSWORD`；登录状态存 `hw_auth`，删掉即需重新输密码。
+- 发布相关本地联调：`npx wrangler pages dev . --kv MYDREAM_KV`（发布密码放 `.dev.vars` 的 `PUBLISH_PASSWORD`；注意 wrangler v4 的 pages dev 不会自动读 toml 的 `[[kv_namespaces]]`，必须 `--kv` 显式绑定）。
+- **线上部署（实际使用）**：Pages 项目 `mydream`（`https://mydream-4y4.pages.dev`）+ GitHub main 分支 Git 集成，`git push` 即自动构建（build 命令 `node build.js`）→ 无需手动 wrangler deploy。KV 绑定 `MYDREAM_KV` 与密钥 `PUBLISH_PASSWORD` 均已配置。
+- **绑定/密钥生效规则（坑）**：改 KV 绑定或密钥后，必须**再推一次（空 commit 即可）**让 Functions 构建时快照刷新；别用裸 REST 整块 PATCH `deployment_configs`（会清掉密钥，恢复需 `wrangler pages secret put` + 重部署）。线上 KV 判断/清理请走 REST，勿用 `wrangler kv` CLI（本地模拟误导）。
+- 页面访问密码改法：`app.js` 顶部 `PASSWORD`（当前 `'19930214'`）；登录状态存 `hw_auth`，删掉即需重新输密码。

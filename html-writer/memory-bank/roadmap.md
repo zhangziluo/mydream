@@ -4,7 +4,8 @@
 - [x] **发布到主页**（2026-09-05）：html-writer「📤 发布」+ `/api/challenge`（一次性 nonce）+ `/api/publish`（HMAC-SHA256 签名校验，明文密码不上传）+ `/api/posts` + `/api/post`（KV 存储）+ 首页动态渲染。
 - [x] **删除已发布文章**（2026-09-05）：html-writer「🗂 已发布」管理对话框（列表 + 删除），`DELETE /api/post?slug=` 走同一 HMAC 鉴权；抽公共 `functions/_shared/auth.js`。
 - [x] **首页限 2 篇 + 分类管理页**（2026-09-05）：首页每栏动态文章最多 2 篇 +「查看全部→」；新增 `dream.html/murmur.html/awake.html`（瀑布流卡片 + 标题/全文搜索，共享 `assets/category.css|js`）；`/api/posts` 支持 `?category=` 并返回 `text`。
-  - **上线前待做**：Cloudflare 控制台创建 KV namespace 并绑定 `MYDREAM_KV`、添加密钥 `PUBLISH_PASSWORD`；wrangler.toml 里已留占位与说明。
+- [x] **停用静态目录通道**（2026-09-05）：本地删除 awake 遗留静态文章，`node build.js` 重建首页（三栏归零占位）；`dream/whisper/awake` 全空，内容统一走 KV。
+- 上线配置：KV `MYDREAM_KV` 已绑定 + 密钥 `PUBLISH_PASSWORD` 已配置（production）。HEAD = `2228997`。
 
 ## 可选的下一步（按价值排序）
 - [ ] **字号档位「记忆」**：导出文件里内联一小段脚本，读 `localStorage` 恢复上次档位（仅成品；预览保持纯 CSS 不可记忆）。
@@ -18,6 +19,7 @@
 3. **`:has()` 需要现代浏览器**（Chrome 105+/Safari 15.4+/Firefox 121+），更旧浏览器点字号按钮无效（无报错）。
 4. 导出正文含用户手写原始 HTML（marked 透传），不转义；自用可接受。
 5. 相对路径图片在导出后以「导出文件所在目录」解析，跨文件夹看图需自行处理路径。
+6. **Pages 不存在的路径会回退首页（HTTP 200）**：如已删除文章 / 旧静态页 URL 打开是首页而非 404（CF Pages 该项目的 SPA 行为）。若想严格 404，可加 `_redirects`（`/awake/* /404.html 404`）并新建 404.html，暂未做。
 
 ## 历史需求澄清记录
 - 编辑器形态：用户在「纯 textarea + 工具栏」与「EasyMDE」之间选前者的实现方向（未显式确认，当时按更轻量、预览/导出样式可控选了纯 textarea）。

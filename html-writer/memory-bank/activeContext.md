@@ -1,6 +1,40 @@
 # 当前进度（Active Context）
 
-> 续写项目时**最先看本文件**。最近会话的六轮改动均已完成并通过验证，无遗留的半成品改动。
+> 续写项目时**最先看本文件**。最近会话的七轮改动均已完成并通过验证，无遗留的半成品改动。
+
+## 📌 项目当前状态快照（2026-09-05 收盘）
+
+> 站点 = 写作工具 html-writer + Pages Functions（KV 发布/阅读/删除）+ 首页/分类管理页（瀑布流 + 全文搜索）。仓库根即发布根，memory-bank 覆盖整个站点而不仅是 html-writer。
+
+**线上部署（Git 自动构建）**
+- Pages 项目 `mydream`，域 `https://mydream-4y4.pages.dev`；GitHub `zhangziluo/mydream` 的 main 分支 push 即自动部署（build 命令 `node build.js`）。
+- CF 账号：`Zhang409543901@gmail.com's Account`（id `55b7fa0b926a9a73a6c4f8b1e39ff300`）。
+- KV：`MYDREAM_KV`（id `3b88c00c81fa4c829febc8a2570098c8`），已绑定 Pages 项目 production + preview。
+- 密钥：`PUBLISH_PASSWORD` 已配置于 CF production（值由用户掌握；本地副本在 `.dev.vars`，已 gitignore）。html-writer 页面访问密码在 `app.js` 顶部 `PASSWORD = '19930214'`（二者不同）。
+- HEAD：`2228997`（最近一次内容变更：删除本地 awake 静态文章并重建首页卡片）。
+
+**代码布局（仓库根）**
+- 首页 `index.html` + `assets/style.css` + `assets/main.js`：静态卡片由 build.js 生成；每栏动态显示**最新 2 篇**已发布文章；栏目标题 /「查看全部 →」→ 分类页。
+- 分类管理页 `dream.html / murmur.html / awake.html` + `assets/category.css|js`：每分类一页，CSS 多列瀑布流 + 顶部搜索框（标题 + 正文全文本地过滤）。
+- API：`functions/api/{challenge,publish,posts,post}.js` + 共用鉴权 `functions/_shared/auth.js`。
+- 写作工具 `html-writer/`（登录遮罩 → Markdown 编辑器 → 导出 / 📤发布 / 🗂已发布管理删除）。
+- 板块静态目录 `dream/ whisper/ awake/` **当前全空**（不再用静态目录发新文）；`build.js` 仍在 build 命令里执行（输出 0 张卡片占位，无害）。
+
+**线上数据（收盘快照，会变）**：`/api/posts` → dream 0 / murmur 2（两篇《9月5日的日记》）/ awake 0。增删都在线进行（html-writer「🗂 已发布」）。
+
+**关键经验 / 坑（详见过往轮次与 architecture「易踩坑」）**
+1. `wrangler kv` CLI 在仓库含 `wrangler.toml` 时操作的是**本地模拟**；判断/清理线上 KV 请走 REST（`/accounts/{acct}/storage/kv/namespaces/{ns}/…`）。**切勿删除 KV 里名为 `PUBLISH_PASSWORD` 的键**（CF 内部使用，删了发布即坏）。
+2. PATCH Pages 项目的 `deployment_configs` 是整块覆盖——**曾因此误清 `PUBLISH_PASSWORD` 密钥**；改完绑定后用 `wrangler pages secret put PUBLISH_PASSWORD` 恢复，再推空 commit 重部署。
+3. Pages Functions 的绑定 / 密钥在**构建时快照**：改完必须再部署一次（空 commit 即可）才生效。
+4. 裸 REST 用 OAuth token 过期会 401；`wrangler …` 会自动刷新 token。
+5. CF Pages 会把 `/xxx.html` 308 到 `/xxx`（干净 URL）；不存在的路径会**回退首页 200**（SPA 行为）。
+
+## 第七轮：删除本地 awake 静态文章并同步线上（2026-09-05）
+
+- 用户在本地删除 `awake/我们都是-童年消逝-…（尼尔·波兹曼书评）.html`（静态 build.js 卡片时代的遗留文章）。
+- 运行 `node build.js` 重建首页 → 三栏静态卡片归零（均回退「静候文字落笔……」占位，栏目标题与「查看全部→」保留）；commit `2228997` 推送，Pages 自动上线。
+- 线上核验：首页已无该卡片；`/api/posts` dream 0 / awake 0 / murmur 2；旧静态 URL 回退首页（SPA 行为，200）。
+- 意义：静态目录发布通道已实际停用（本地 3 目录全空），内容统一走 KV 发布系统；`build.js` 保留仅为兼容旧流程。
 
 ## 第六轮：首页限 2 篇 + 分类管理页（瀑布流 + 全文搜索）（2026-09-05）
 
@@ -55,7 +89,7 @@
 
 按需求一次性创建了 7 个文件（详见 `architecture.md`），覆盖全部功能点：
 
-1. **密码保护（自用）**：启动先弹登录遮罩；密码硬编码 `app.js → const PASSWORD = '2026'`；输错提示「密码错误」+ 抖动动画；通过后写 `localStorage.hw_auth = '1'`，刷新免登录。
+1. **密码保护（自用）**：启动先弹登录遮罩；密码硬编码 `app.js → const PASSWORD`（**当前值 `'19930214'`**，勿与发布密钥 PUBLISH_PASSWORD 混淆）；输错提示「密码错误」+ 抖动动画；通过后写 `localStorage.hw_auth = '1'`，刷新免登录。
 2. **编辑器**：采用「纯 textarea + 自绘工具栏」（未用 EasyMDE）——按钮经 `data-cmd` 分发到 `runCommand()`；含加粗/斜体/删除线/H1/H2/引用/无序/有序列表/行内代码/代码块/链接/图片/分割线/撤销。
 3. **实时预览**：`marked`（CDN）解析 → 渲染进 `sandbox="allow-same-origin"` 的 iframe（doc.write），样式与导出文件**同构**，所见即所得。
 4. **模板切换**：顶部下拉「极简 / 杂志风 / 代码风」，切换即换 `<link href="templates/*.css">`。
@@ -103,4 +137,5 @@
 ## 最近一次操作人 / 时间
 - 2026-09-04：两轮改动均完成并验证；随后建立本 Memory Bank。
 - 2026-09-04（续）：第三轮新增「梦 / 梦呓 / 醒」三个板块模板（三处登记 + 内置副本 + 示例文案），均完成并验证。
-- 2026-09-05：第四轮「发布到主页」（前端按钮/对话框/POST + functions/ 三个端点 + 首页动态渲染），mock 冒烟 + wrangler pages dev 端到端均通过；待用户上线前在控制台绑定 KV 与发布密码。
+- 2026-09-05：第四轮「发布到主页」（前端按钮/对话框/POST + functions/ 端点 + 首页动态渲染），已上线并绑定 KV 与发布密钥。
+- 2026-09-05（续 2）：第五轮「🗂 已发布」删除文章、第六轮分类管理页（瀑布流 + 全文搜索）、第七轮删除本地 awake 静态文章，全部上线验证；并写入「项目当前状态快照」。HEAD = `2228997`。
