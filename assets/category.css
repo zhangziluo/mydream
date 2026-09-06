@@ -186,6 +186,27 @@ body {
 }
 .cat-foot a:hover { color: var(--accent); border-color: var(--accent); }
 
+/* 友情链接（所有公开页页脚） */
+.cat-foot .friend-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 18px;
+  margin-top: 14px;
+}
+.cat-foot .friend-link {
+  color: var(--ink-dim);
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.28);
+  transition: color 0.25s ease, border-color 0.25s ease;
+}
+.cat-foot .friend-link:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
 /* 手机竖排背景改为上蓝下暖 */
 @media (max-width: 640px) {
   body {
