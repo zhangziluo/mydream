@@ -10,7 +10,7 @@
 | `architecture.md` | 项目结构、各文件职责、关键实现与「坑」 |
 | `roadmap.md` | 待办 / 已知问题 / 需求澄清记录 |
 
-> 更新时间：2026-09-05（会话收盘，HEAD `2228997`）
+> 更新时间：2026-09-06（会话收盘，HEAD `824c5a3`）
 > 仓库根：`/Users/zhangziluo/Downloads/Mydream`（html-writer 位于 `html-writer/`）
 > 线上：Pages `mydream` → `https://mydream-4y4.pages.dev`（GitHub main 推送自动构建）
 > html-writer 运行：直接双击 `index.html`（联网加载 CDN marked）或访问线上 `/html-writer/`

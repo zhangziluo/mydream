@@ -1,8 +1,8 @@
 # 当前进度（Active Context）
 
-> 续写项目时**最先看本文件**。最近会话的七轮改动均已完成并通过验证，无遗留的半成品改动。
+> 续写项目时**最先看本文件**。最近会话的轮次改动（截至第十一轮）均已完成并上线验证，无遗留的半成品改动。
 
-## 📌 项目当前状态快照（2026-09-05 收盘）
+## 📌 项目当前状态快照（2026-09-06 收盘）
 
 > 站点 = 写作工具 html-writer + Pages Functions（KV 发布/阅读/删除）+ 首页/分类管理页（瀑布流 + 全文搜索）。仓库根即发布根，memory-bank 覆盖整个站点而不仅是 html-writer。
 
@@ -11,16 +11,16 @@
 - CF 账号：`Zhang409543901@gmail.com's Account`（id `55b7fa0b926a9a73a6c4f8b1e39ff300`）。
 - KV：`MYDREAM_KV`（id `3b88c00c81fa4c829febc8a2570098c8`），已绑定 Pages 项目 production + preview。
 - 密钥：`PUBLISH_PASSWORD` 已配置于 CF production（值由用户掌握；本地副本在 `.dev.vars`，已 gitignore）。html-writer 页面访问密码在 `app.js` 顶部 `PASSWORD = '19930214'`（二者不同）。
-- HEAD：`2228997`（最近一次内容变更：删除本地 awake 静态文章并重建首页卡片）。
+- HEAD：`824c5a3`（最近一次内容变更：favicon 生成并接入全部页面；本日历史：`800f87b` 全站页脚友情链接、`896c7dc` 页脚扩展/赞助/留言板/关于、`7020e33` 打开文件+编辑已发布文章）。
 
 **代码布局（仓库根）**
-- 首页 `index.html` + `assets/style.css` + `assets/main.js`：静态卡片由 build.js 生成；每栏动态显示**最新 2 篇**已发布文章；栏目标题 /「查看全部 →」→ 分类页；页脚含「赞助（二维码弹窗）/ 留言 / 关于 / ✉ 联系」入口。留言板 `guestbook.html` + `assets/guestbook.js`（纯前端 localStorage，昵称随机 + 最多 50 条），关于页 `about.html`（含邮箱联系方式），样式统一在 `assets/style.css`。
+- 首页 `index.html` + `assets/style.css` + `assets/main.js`：静态卡片由 build.js 生成；每栏动态显示**最新 2 篇**已发布文章；栏目标题 /「查看全部 →」→ 分类页；页脚含「赞助（二维码弹窗）/ 留言 / 关于 / ✉ 联系」入口 + 友情链接（我的图书馆 myfami.cn / 我的日程管理工具 ics-editor）。留言板 `guestbook.html` + `assets/guestbook.js`（纯前端 localStorage，昵称随机 + 最多 50 条），关于页 `about.html`（含邮箱联系方式），样式统一在 `assets/style.css`。全站 favicon = `assets/favicon.png`（256 方形圆角、星月夜→向日葵渐变 + 月牙/星点），7 个 HTML 均已在 `<head>` 加 `<link rel="icon">`（含 html-writer 用 `../assets/favicon.png`）。
 - 分类管理页 `dream.html / murmur.html / awake.html` + `assets/category.css|js`：每分类一页，CSS 多列瀑布流 + 顶部搜索框（标题 + 正文全文本地过滤）。
 - API：`functions/api/{challenge,publish,posts,post}.js` + 共用鉴权 `functions/_shared/auth.js`。
-- 写作工具 `html-writer/`（登录遮罩 → Markdown 编辑器 → 导出 / 📤发布 / 🗂已发布管理删除 / 📂打开文件：本地 .md/.txt 打开 + 已发布文章编辑（更新原文 / 另存为新文章））。
+- 写作工具 `html-writer/`（登录遮罩 → Markdown 编辑器 → 导出 / 📤发布 / 🗂已发布管理删除 / 📂打开文件：本地 .md/.txt 打开 + 已发布文章编辑（更新原文 / 另存为新文章））；已带 favicon（`../assets/favicon.png`）。
 - 板块静态目录 `dream/ whisper/ awake/` **当前全空**（不再用静态目录发新文）；`build.js` 仍在 build 命令里执行（输出 0 张卡片占位，无害）。
 
-**线上数据（收盘快照，会变）**：`/api/posts` → dream 0 / murmur 2（两篇《9月5日的日记》）/ awake 0。增删都在线进行（html-writer「🗂 已发布」）。
+**线上数据（收盘快照，会变）**：`/api/posts` → dream 0 / murmur 3 / awake 2（最新 murmur《9月5日的日记》hasMd=true；awake 2 篇为旧版无 md 文章）。增删改都在线进行（html-writer「🗂 已发布」+「📂 打开文件」）。
 
 **关键经验 / 坑（详见过往轮次与 architecture「易踩坑」）**
 1. `wrangler kv` CLI 在仓库含 `wrangler.toml` 时操作的是**本地模拟**；判断/清理线上 KV 请走 REST（`/accounts/{acct}/storage/kv/namespaces/{ns}/…`）。**切勿删除 KV 里名为 `PUBLISH_PASSWORD` 的键**（CF 内部使用，删了发布即坏）。
@@ -28,6 +28,30 @@
 3. Pages Functions 的绑定 / 密钥在**构建时快照**：改完必须再部署一次（空 commit 即可）才生效。
 4. 裸 REST 用 OAuth token 过期会 401；`wrangler …` 会自动刷新 token。
 5. CF Pages 会把 `/xxx.html` 308 到 `/xxx`（干净 URL）；不存在的路径会**回退首页 200**（SPA 行为）。
+
+## 第十一轮：全站 favicon（2026-09-06）
+
+需求：生成与站点色调一致的**方形圆角** favicon，并让所有页面都带上。
+
+1. **生成 `assets/favicon.png`**（256×256 RGBA，约 7.3KB）：临时 Node 脚本（放在 /tmp，已清理）用 Node 内置 `zlib` 手写 PNG 编码（signature + IHDR + IDAT + IEND + CRC32，无外部库）；像素按 SDF（有符号距离场）绘制：
+   - 圆角矩形遮罩：r=56，四角外透明、约 1px 抗锯齿（像素采样 corner alpha=0）；
+   - 对角渐变呼应首页天空：`#0a1834 → #2b5b96 → #7a6472 → #f2c457`；
+   - 左上月牙（`#eef7ff`，两圆差集）+ 右下暖星点（`#ffd98a`）。
+   - 选 PNG 而非 SVG：SVG favicon 旧 Safari 不支持，PNG 全兼容。
+2. **接入 7 个 HTML `<head>`**：根目录 6 页（index/dream/murmur/awake/guestbook/about）`<link rel="icon" type="image/png" href="assets/favicon.png">`；`html-writer/index.html` 用 `../assets/favicon.png`。
+3. **验证**：`file`/`sips` 确认合法 256px RGBA；像素采样（角透明、渐变、月牙/星点色值）符合预期；本地 HTTP 200；上线后 7 页各 1 处引用、图片 200。commit `824c5a3`。
+
+## 第十轮：全站页脚友情链接（2026-09-06）
+
+需求：公开站点**所有网页的 footer** 加入两个「兄弟链接」——我的图书馆（`https://myfami.cn/`）、我的日程管理工具（`https://ics-editor.zhang409543901.workers.dev/`）。范围 = 6 个公开页面；`html-writer/`（登录后全屏编辑器、无 footer）不参与。
+
+1. **HTML（6 页）**：
+   - `index.html`：`.page-footer` 的 `.footer-links` 后新增 `<nav class="friend-links">`（两链接，外站 `target="_blank" rel="noopener"`）。
+   - `dream.html / murmur.html / awake.html`：`.cat-foot` 中「← 返回 Mydream 首页」下方追加同一段 `.friend-links`。
+   - `guestbook.html / about.html`（原无 footer）：内容容器后新增 `<footer class="site-footer">` 内含 `.friend-links`。
+2. **CSS**：`assets/style.css` 新增 `.friend-links / .friend-link / .friend-link:hover / .site-footer`（hover 用 `--wake`）；`assets/category.css` 新增 `.cat-foot .friend-links / .friend-link / .friend-link:hover`（hover 用各栏 `--accent`）。视觉与现有 footer 一致（muted 色 + 下划线 + hover 高亮），flex 换行居中适配移动端。
+3. 细节：`myfami.cn` 无协议头，补 `https://`（否则被当作站内相对路径）。
+4. **验证**：本地 grep 6 页各含 2 个外链 URL 与 2 个名称、CSS 括号配平；上线后 6 页 footer 各 1 处。commit `800f87b`。
 
 ## 第九轮：站点页脚扩展（赞助 / 留言板 / 关于 / 联系）（2026-09-06）
 
@@ -166,3 +190,4 @@
 - 2026-09-04（续）：第三轮新增「梦 / 梦呓 / 醒」三个板块模板（三处登记 + 内置副本 + 示例文案），均完成并验证。
 - 2026-09-05：第四轮「发布到主页」（前端按钮/对话框/POST + functions/ 端点 + 首页动态渲染），已上线并绑定 KV 与发布密钥。
 - 2026-09-05（续 2）：第五轮「🗂 已发布」删除文章、第六轮分类管理页（瀑布流 + 全文搜索）、第七轮删除本地 awake 静态文章，全部上线验证；并写入「项目当前状态快照」。HEAD = `2228997`。
+- 2026-09-06：第八轮「📂 打开文件」（本地 md/txt + 编辑已发布文章：更新原文/另存为）、第九轮站点页脚扩展（赞助弹窗/留言板/关于/联系）、第十轮全站页脚友情链接（我的图书馆 / 我的日程管理工具）、第十一轮全站 favicon（方形圆角、星月夜→向日葵），全部实现、jsdom/mock 验证并推送上线；更新快照至 HEAD = `824c5a3`。
