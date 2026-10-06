@@ -35,7 +35,7 @@ book.html                # 长文目录页 /book?slug=…（书名 + 章数 + �
 assets/main.js           # 首页：拉 /api/posts，每栏 slice(0,2) 追加卡片（长文卡片 → /book?slug=）
 assets/category.js|css   # 分类页：瀑布流卡片 + 标题/正文全文搜索（长文卡片带「长文 · 共 N 章」）
 assets/book.js|css       # 目录页：拉 /api/book?slug=… 渲染章节列表（/book 页专用样式）
-assets/style.css         # 首页与分类页共用视觉（--dream/murmur/wake、.col 等）
+assets/style.css         # 首页与分类页共用视觉（--dream/murmur/wake、.col、页脚三条友情链接 .friend-links 等）
 build.js                 # 扫描 dream/whisper/awake 目录生成静态卡片（当前目录全空，输出 0 张）
 dream/ whisper/ awake/   # 静态板块目录（当前为空，发布已走 KV）
 wrangler.toml            # KV 绑定声明 + 本地联调说明
@@ -104,8 +104,13 @@ wrangler.toml            # KV 绑定声明 + 本地联调说明
 11. **改名/移动章节不要手改 KV**：一切走 `/api/publish`（带/不带 `book`），由 `_shared/books.js` 维护 `chapters` 数组，避免章序错乱或丢失。
 
 ## 运行 / 部署
-- 本地：双击 `index.html`（需联网加载 marked；file:// 下「发布」会因无后端提示网络错误，属预期）；`python3 -m http.server` 亦可。
+- 本地：双击 `index.html`（需联网加载 marked；file:// 下「发布」会因无后端提示网络错误，属预期）；`python3 -m http.server` 亦可（长文目录页请访问 `book.html?slug=…`）。
 - 发布相关本地联调：`npx wrangler pages dev . --kv MYDREAM_KV`（发布密码放 `.dev.vars` 的 `PUBLISH_PASSWORD`；注意 wrangler v4 的 pages dev 不会自动读 toml 的 `[[kv_namespaces]]`，必须 `--kv` 显式绑定）。
-- **线上部署（实际使用）**：Pages 项目 `mydream`（`https://mydream-4y4.pages.dev`）+ GitHub main 分支 Git 集成，`git push` 即自动构建（build 命令 `node build.js`）→ 无需手动 wrangler deploy。KV 绑定 `MYDREAM_KV` 与密钥 `PUBLISH_PASSWORD` 均已配置。
+- **本地验证（本仓库无测试框架 / 无 CI）**：`node --check <file>` 做语法检查；接口与前端用**自建脚手架**（`/tmp/hwtest/`，临时目录）：
+  · 后端：把 `functions/**` 复制成 `.mjs`（把 `../_shared/*.js` 的 import 改写为同目录名）→ 用**内存 KV**（`get/put/delete/list({prefix})`）直调 `onRequestGet/Post/Delete({ request, env })`，走真实 `crypto.subtle` HMAC → `api.test.mjs`（新建长文/分章/目录/导航注入/删除/鉴权/转义/旧数据兼容 **63/63**）。
+  · 前端：`dom.mjs` 提供轻量 DOM 桩（元素/classList/事件/`dispatchEvent`/`select.options`/`Event`），用 `vm.runInNewContext(源码, sandbox)` 跑脚本，`fetch` 用 router 桩返回假响应 → `ui.test.mjs`（main/category/book/app.js 长文链路 **77/77**）。
+  · `navpeek.mjs` 可打印某章阅读页里真实注入的 `hw-chapter-nav` HTML，便于肉眼核对。
+  · 坑：本机 `npm i jsdom` 会失败（registry 证书过期）→ 所以不要依赖 jsdom；另外 `vm` 沙箱里必须自备 `Event`/`CustomEvent`（`app.js` 的 `afterEdit()` 会 `new Event('input')`）。
+- **线上部署（实际使用）**：Pages 项目 `mydream`（`https://mydream-4y4.pages.dev`）+ GitHub main 分支 Git 集成，`git push` 即自动构建（build 命令 `node build.js`）→ 无需手动 wrangler deploy。KV 绑定 `MYDREAM_KV` 与密钥 `PUBLISH_PASSWORD` 均已配置。构建约 1 分钟，之后用 `curl` 复核 `/book`、`/api/books`、`/api/posts` 等即可。
 - **绑定/密钥生效规则（坑）**：改 KV 绑定或密钥后，必须**再推一次（空 commit 即可）**让 Functions 构建时快照刷新；别用裸 REST 整块 PATCH `deployment_configs`（会清掉密钥，恢复需 `wrangler pages secret put` + 重部署）。线上 KV 判断/清理请走 REST，勿用 `wrangler kv` CLI（本地模拟误导）。
 - 页面访问密码改法：`app.js` 顶部 `PASSWORD`（当前 `'19930214'`）；登录状态存 `hw_auth`，删掉即需重新输密码。

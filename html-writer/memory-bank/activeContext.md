@@ -1,17 +1,17 @@
 # 当前进度（Active Context）
 
-> 续写项目时**最先看本文件**。最近会话的轮次改动（截至第十一轮）均已完成并上线验证，无遗留的半成品改动。
+> 续写项目时**最先看本文件**。最近会话的轮次改动（截至第十三轮）均已完成并上线验证，无遗留的半成品改动。
 
-## 📌 项目当前状态快照（2026-09-06 收盘）
+## 📌 项目当前状态快照（2026-10-06 收盘）
 
-> 站点 = 写作工具 html-writer + Pages Functions（KV 发布/阅读/删除）+ 首页/分类管理页（瀑布流 + 全文搜索）。仓库根即发布根，memory-bank 覆盖整个站点而不仅是 html-writer。
+> 站点 = 写作工具 html-writer + Pages Functions（KV 发布/阅读/长文/删除）+ 首页/分类管理页（瀑布流 + 全文搜索）+ 长文目录页与章节导航。仓库根即发布根，memory-bank 覆盖整个站点而不仅是 html-writer。
 
 **线上部署（Git 自动构建）**
 - Pages 项目 `mydream`，域 `https://mydream-4y4.pages.dev`；GitHub `zhangziluo/mydream` 的 main 分支 push 即自动部署（build 命令 `node build.js`）。
 - CF 账号：`Zhang409543901@gmail.com's Account`（id `55b7fa0b926a9a73a6c4f8b1e39ff300`）。
 - KV：`MYDREAM_KV`（id `3b88c00c81fa4c829febc8a2570098c8`），已绑定 Pages 项目 production + preview。
 - 密钥：`PUBLISH_PASSWORD` 已配置于 CF production（值由用户掌握；本地副本在 `.dev.vars`，已 gitignore）。html-writer 页面访问密码在 `app.js` 顶部 `PASSWORD = '19930214'`（二者不同）。
-- HEAD：`f453402`（**长文分章发布：目录页 + 上一章/下一章**；此前本日历史：`6493df6` memory-bank 存档、`824c5a3` favicon、`800f87b` 页脚友情链接、`896c7dc` 页脚扩展/赞助/留言板/关于、`7020e33` 打开文件+编辑已发布文章）。**Pages 构建已自动完成**（无需手工 wrangler deploy）。
+- HEAD：`a1c6749`（**页脚友情链接更新：日程工具换 `ics.myfami.cn` + 新增「我的学习卡片」**）。本阶段历史：`f453402` 长文分章发布（目录页 + 上一章/下一章）→ `6f991e6` memory-bank 存档 → `a1c6749` 页脚链接；更早：`6493df6` memory-bank 存档、`824c5a3` favicon、`800f87b` 页脚友情链接、`896c7dc` 页脚扩展/赞助/留言板/关于、`7020e33` 打开文件+编辑已发布文章。**Pages 构建已自动完成**（无需手工 wrangler deploy）。
 
 **代码布局（仓库根）**
 - 首页 `index.html` + `assets/style.css` + `assets/main.js`：静态卡片由 build.js 生成；每栏动态显示**最新 2 篇**已发布文章；栏目标题 /「查看全部 →」→ 分类页；页脚含「赞助（二维码弹窗）/ 留言 / 关于 / ✉ 联系」入口 + 友情链接（我的图书馆 `https://myfami.cn/` / 我的日程管理工具 `https://ics.myfami.cn/` / 我的学习卡片 `https://cards.myfami.cn/`）。留言板 `guestbook.html` + `assets/guestbook.js`（纯前端 localStorage，昵称随机 + 最多 50 条），关于页 `about.html`（含邮箱联系方式），样式统一在 `assets/style.css`。全站 favicon = `assets/favicon.png`（256 方形圆角、星月夜→向日葵渐变 + 月牙/星点），页面均已在 `<head>` 加 `<link rel="icon">`（含 html-writer 用 `../assets/favicon.png`）。
@@ -21,14 +21,17 @@
 - 写作工具 `html-writer/`（登录遮罩 → Markdown 编辑器 → 导出 / 📤发布（可归入长文分章）/ 🗂已发布管理删除 / 📚长文管理 / 📂打开文件：本地 .md/.txt 打开 + 已发布文章编辑（更新原文 / 另存为新文章））；已带 favicon（`../assets/favicon.png`）。
 - 板块静态目录 `dream/ whisper/ awake/` **当前全空**（不再用静态目录发新文）；`build.js` 仍在 build 命令里执行（输出 0 张卡片占位，无害）。
 
-**线上数据（2026-10-06 实测快照，会变）**：`/api/posts` → dream 0 / murmur 12 / awake 16（全部为旧版单篇文章 `type:'post'`，尚无长文 → `/api/books` 返回 `[]`）。增删改都在线进行（html-writer「🗂 已发布」+「📂 打开文件」+「📚 长文」）。
+**线上数据（2026-10-06 实测快照，会变）**：`/api/posts` → dream 1 / murmur 12 / awake 16；其中 dream 的 1 条是**长文卡片**（`type:'book'`）、murmur/awake 均为 `type:'post'` 单篇。`/api/books` → **1 部**：`untitled-muw40ey0`《无声羊鸣》（dream，**10 章**，最新《终章 止水无音》）——即第十二轮的长文功能已**在线上真实使用**。增删改都在线进行（html-writer「🗂 已发布」+「📂 打开文件」+「📚 长文」）。
+
+**长文线上实测（2026-10-06）**：`/book?slug=untitled-muw40ey0` → 200（目录页）；章节阅读页 `/api/post?slug=untitled-muw43ygv` 的 `hw-chapter-nav` 正常输出「← 上一章 蜕 / 目录 · 第 2 / 10 章《无声羊鸣》 / 下一章 第三章 心底藏刃 →」（说明服务端注入与真实 KV 数据一致）。
 
 **关键经验 / 坑（详见过往轮次与 architecture「易踩坑」）**
 1. `wrangler kv` CLI 在仓库含 `wrangler.toml` 时操作的是**本地模拟**；判断/清理线上 KV 请走 REST（`/accounts/{acct}/storage/kv/namespaces/{ns}/…`）。**切勿删除 KV 里名为 `PUBLISH_PASSWORD` 的键**（CF 内部使用，删了发布即坏）。
 2. PATCH Pages 项目的 `deployment_configs` 是整块覆盖——**曾因此误清 `PUBLISH_PASSWORD` 密钥**；改完绑定后用 `wrangler pages secret put PUBLISH_PASSWORD` 恢复，再推空 commit 重部署。
 3. Pages Functions 的绑定 / 密钥在**构建时快照**：改完必须再部署一次（空 commit 即可）才生效。
 4. 裸 REST 用 OAuth token 过期会 401；`wrangler …` 会自动刷新 token。
-5. CF Pages 会把 `/xxx.html` 308 到 `/xxx`（干净 URL）；不存在的路径会**回退首页 200**（SPA 行为）。
+5. CF Pages 会把 `/xxx.html` 308 到 `/xxx`（干净 URL，已验证 `/book` → `book.html` 生效）；不存在的路径会**回退首页 200**（SPA 行为）。
+6. **本地测试脚手架**：本机 `npm i jsdom` 失败（npm registry 证书过期），故第十二轮起改用「内存 KV 直调 Functions handler + 自写轻量 DOM 桩（`vm` 跑前端脚本）」：脚手架在 `/tmp/hwtest/`（**临时目录，重启即失**）——`api.test.mjs`（后端 63/63）、`ui.test.mjs` + `dom.mjs`（前端 77/77）、`navpeek.mjs`（打印真实注入的章节导航）。需要时按 architecture「运行 / 部署 · 本地验证」的思路重建。
 
 ## 第十三轮：页脚友情链接更新（2026-10-06）
 
@@ -68,6 +71,7 @@
 - 后端 mock 测试 `/tmp/hwtest/api.test.mjs`：**63/63 通过**（新建长文→分章上传→章序/分类跟随→列表与目录→导航注入（首章无上一章、末章无下一章、第 n/N 章）→原地更新保章序→移出长文→换书→删章节自动删空文→删整部→401/400/404 分支→书名章名转义→**旧数据（无 book/type）兼容**）。
 - 前端测试 `/tmp/hwtest/ui.test.mjs`（`/tmp/hwtest/dom.mjs` 桩）：**77/77 通过**（main.js 长文卡片 href/角标、category.js 标记与文案、book.js 目录渲染与 404 空态、app.js 添加新章预选、分章发布 body、新建长文校验、长文管理对话框渲染与四个操作、列表 chapters=1 + 章节归属 + 打开章节编辑 + 原地更新）。
 - 本地静态服务：`/book.html`、`/assets/book.js`、`/assets/book.css`、`/html-writer/` 均 200。
+- **线上真实使用（2026-10-06）**：首部长文《无声羊鸣》（dream，**10 章**，slug `untitled-muw40ey0`）已用 html-writer 分章发布上线；线上复核 `/book?slug=…` 200、章节阅读页注入「上一章 / 目录 · 第 2 / 10 章 / 下一章」正确、`/api/posts` 的 dream 分组显示为 1 张长文卡片 —— 功能已闭环（发稿 → 目录 → 章间跳转全部走线上 KV 真实数据）。
 
 ## 第十一轮：全站 favicon（2026-09-06）
 
@@ -84,6 +88,7 @@
 ## 第十轮：全站页脚友情链接（2026-09-06）
 
 需求：公开站点**所有网页的 footer** 加入两个「兄弟链接」——我的图书馆（`https://myfami.cn/`）、我的日程管理工具（`https://ics-editor.zhang409543901.workers.dev/`）。范围 = 6 个公开页面；`html-writer/`（登录后全屏编辑器、无 footer）不参与。
+（**2026-10-06 第十三轮已更新**：日程工具换成 `https://ics.myfami.cn/`、新增「我的学习卡片」`https://cards.myfami.cn/`，范围扩到 7 页——本节保留当时原貌作历史记录。）
 
 1. **HTML（6 页）**：
    - `index.html`：`.page-footer` 的 `.footer-links` 后新增 `<nav class="friend-links">`（两链接，外站 `target="_blank" rel="noopener"`）。
@@ -215,15 +220,27 @@
 - `app.js` `EMBEDDED_DREAM/MURMUR/WAKE_CSS` 内置副本 —— 用临时 Node 脚本从 `templates/*.css` **字节级注入**（脚本在 /tmp，已清理）。
 - 首启示例 `SAMPLE_MD` 的模板列表 / 表格同步加入三模板。
 
-## 验证记录
+## 验证方式与最近结果（本仓库无测试框架 / 无 CI）
 
-- `node --check app.js` ✅（三轮改动后均通过）。
-- jsdom 冒烟测试：
-  - 第一轮核心功能 **23/23**：密码对/错、示例载入、字数、加粗/撤销、行标题 toggle、插链接光标位置、预览生成、三模板切换、导出文件名、移动端预览/编辑互切。
-  - 第一轮导出内容 **7/7**：DOCTYPE、`<title>`、base+模板 CSS 内联、`<article>` 包裹正文、无外部 css `<link>`、`</style></html>` 收尾。
-  - 第二轮字号控件 **20/20**：预览/导出均含 `.fs-ctrl`、4 个 radio、`fs-m` 默认 checked、`:has()` 规则与 `@media print`、切 code 模板控件仍在、导出无外部 css link、导出单文件可交互（新 JSDOM 解析后点「大/小」radio 正常切换）。
-  - 第三轮新增模板登记 **通过**：`node --check app.js` 无语法错误；临时校验脚本确认 `EMBEDDED_DREAM/MURMUR/WAKE_CSS` 与 `templates/*.css` 字节一致、`TEMPLATES` / `EMBEDDED_CSS` map / `index.html` 下拉三处登记齐全。
-- 内置 CSS 副本一致性：用临时 Node 脚本从 `preview.css`/`templates/*.css` **字节级注入** `app.js` 的 `EMBEDDED_CSS`（脚本在 /tmp，已清理，勿删上面那句提醒——将来改 CSS 需重建同思路脚本，见 architecture 第 5 点）。
+**通用手段**
+- 语法：`node --check <改动过的 .js>`（含 `functions/**` 的 ESM 与前端脚本）。
+- 接口：内存 KV 直调 handler —— 脚手架 `/tmp/hwtest/api.test.mjs`（细节见本文件「关键经验 6」与 architecture「运行 / 部署 · 本地验证」）。
+- 前端：自建轻量 DOM 桩 + `vm`（`/tmp/hwtest/ui.test.mjs` + `dom.mjs`）——本机 `npm i jsdom` 失败（registry 证书过期）。
+- 静态页：本地 `python3 -m http.server` + `curl -o /dev/null -w '%{http_code}'` 抽样；HTML 结构用 python `HTMLParser` 查标签配平。
+- 线上：`git push` 后等约 1 分钟（CF Pages 自动构建），再 `curl` 复核关键路径（`/`、三分类页、`/book`、`/api/posts`、`/api/books`、`/api/post`）。
+
+**最近两轮结果（2026-10-06）**
+- 第十二轮（长文）：后端 **63/63**、前端 **77/77**、本地静态页 200；线上 `/book` 200、`/api/books` 200、`/api/book?slug=不存在` 404、`/api/posts` 兼容旧数据。
+- 第十三轮（页脚链接）：7 页各 3 条 `.friend-link` 且 URL 一致、无 `ics-editor` 残留、7 页 HTML 标签配平、三个外站 `curl -L` 均 200；线上 7 页实测链接与文案正确。
+- 长文**真实使用**：首部《无声羊鸣》10 章已线上发布，目录页 200、章节页导航「第 2 / 10 章」正确。
+
+**历史轮次（早期 jsdom 时代，留档）**
+- 第一轮核心功能 **23/23**：密码对/错、示例载入、字数、加粗/撤销、行标题 toggle、插链接光标位置、预览生成、三模板切换、导出文件名、移动端预览/编辑互切。
+- 第一轮导出内容 **7/7**：DOCTYPE、`<title>`、base+模板 CSS 内联、`<article>` 包裹正文、无外部 css `<link>`、`</style></html>` 收尾。
+- 第二轮字号控件 **20/20**：预览/导出均含 `.fs-ctrl`、4 个 radio、`fs-m` 默认 checked、`:has()` 规则与 `@media print`、切 code 模板控件仍在、导出无外部 css link、导出单文件可交互。
+- 第三轮模板登记：`node --check app.js` 通过；临时脚本确认 `EMBEDDED_DREAM/MURMUR/WAKE_CSS` 与 `templates/*.css` 字节一致、三处登记齐全。
+- 第八轮：mock KV 端到端 11/11 + jsdom UI 23/23；第九轮：jsdom 冒烟 38/38。
+- 内置 CSS 副本一致性：用临时 Node 脚本从 `preview.css`/`templates/*.css` **字节级注入** `app.js` 的 `EMBEDDED_CSS`（脚本在 /tmp，已清理；将来改 CSS 仍需重建同思路脚本，见 architecture 坑 3）。
 
 ## 最近一次操作人 / 时间
 - 2026-09-04：两轮改动均完成并验证；随后建立本 Memory Bank。
@@ -233,3 +250,4 @@
 - 2026-09-06：第八轮「📂 打开文件」（本地 md/txt + 编辑已发布文章：更新原文/另存为）、第九轮站点页脚扩展（赞助弹窗/留言板/关于/联系）、第十轮全站页脚友情链接（我的图书馆 / 我的日程管理工具）、第十一轮全站 favicon（方形圆角、星月夜→向日葵），全部实现、jsdom/mock 验证并推送上线；更新快照至 HEAD = `824c5a3`。
 - 2026-10-06：第十二轮「长文（分章作品）」——html-writer 分章上传/长文管理、站点目录页 `book.html`、阅读页服务端注入「上一章/目录/下一章」、新增 `/api/books` 与 `/api/book`；用内存 KV + 自建 DOM 桩（本机装不上 jsdom）跑出 63/63 + 77/77，提交 `f453402` 推送后 CF Pages 自动构建上线（`/book`、`/assets/book.js|css`、`/api/books`、`/api/book` 线上实测 200/404 正常）。
 - 2026-10-06（续）：第十三轮「页脚友情链接更新」——7 个页面把「我的日程管理工具」换成 `https://ics.myfami.cn/` 并新增「我的学习卡片」`https://cards.myfami.cn/`（样式零改动，flex-wrap 自动换行）；验证 7 页各 3 条链接、HTML 标签配平、三个外站 200。
+- 2026-10-06（续 2）：**把当前进度归档进 memory-bank**——快照更新到 HEAD `a1c6749`、补第十三轮条目、记录长文线上真实使用（《无声羊鸣》10 章）实测、重写「验证方式与最近结果」（含本机无 jsdom 的自建脚手架用法）、roadmap 补长文行为约定与 slug 待办。当前工作区干净、无未提交改动。

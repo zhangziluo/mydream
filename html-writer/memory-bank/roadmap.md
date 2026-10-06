@@ -1,7 +1,7 @@
 # 待办 / 已知问题 / 需求记录（Roadmap）
 
 ## 已完成（近期新增功能，回顾见 activeContext）
-- [x] **长文（分章作品）**（2026-10-06，commit `f453402` **已上线**）：html-writer 支持「📚 长文」管理（长文列表 + 每部章节表 + ＋添加新章 / 目录 / 删除整部 / 章节打开·删除）；发布框新增「长文」下拉（选择已发布长文标题，或「＋ 新建长文…」），选书后分类跟随长文、发布即成为该文一章（新章追加到末尾，编辑章节原地更新）；网页端新增目录页 `book.html`（`/book?slug=…`）+ 阅读页服务端注入「← 上一章 / 目录 · 第 n / N 章 / 下一章 →」；新增 API `/api/books`、`/api/book`（GET 目录 / DELETE 整部），`/api/publish`、`/api/posts`、`/api/post` 扩展长文字段。
+- [x] **长文（分章作品）**（2026-10-06，commit `f453402` **已上线并已投入实际使用**：首部《无声羊鸣》10 章）：html-writer 支持「📚 长文」管理（长文列表 + 每部章节表 + ＋添加新章 / 目录 / 删除整部 / 章节打开·删除）；发布框新增「长文」下拉（选择已发布长文标题，或「＋ 新建长文…」），选书后分类跟随长文、发布即成为该文一章（新章追加到末尾，编辑章节原地更新）；网页端新增目录页 `book.html`（`/book?slug=…`）+ 阅读页服务端注入「← 上一章 / 目录 · 第 n / N 章 / 下一章 →」；新增 API `/api/books`、`/api/book`（GET 目录 / DELETE 整部），`/api/publish`、`/api/posts`、`/api/post` 扩展长文字段。
 - [x] **全站 favicon**（2026-09-06）：`assets/favicon.png`（256 方形圆角，星月夜→向日葵渐变 + 月牙/星点），纯 Node（内置 zlib 手写 PNG 编码）生成、无外部库；7 个页面（首页/三分类/留言/关于/html-writer）均已加 `<link rel="icon">`。
 - [x] **页脚友情链接**（2026-09-06 建立 / 2026-10-06 更新）：**7 个公开页面**（首页 / 三分类 / 留言 / 关于 / 长文目录页）footer 均为三条兄弟链接——我的图书馆 `https://myfami.cn/`、我的日程管理工具 `https://ics.myfami.cn/`（原 ics-editor Workers 域名已换）、我的学习卡片 `https://cards.myfami.cn/`（新增），外链新窗口，样式在 `assets/style.css` 与 `assets/category.css`（flex-wrap 居中，自动适配移动端）。
 - [x] **站点页脚扩展**（2026-09-06）：首页 footer 去 Dream OS，新增「赞助」二维码弹窗（assets/images/afdian-qr.png + wechat-reward.png）、纯前端留言板 `guestbook.html`（localStorage：`guest_name` 随机昵称 / `guestbook_messages` 上限 50 删最早，倒序 + 相对时间，textContent 防 XSS）、`about.html` 关于页、`✉ mailto:409543901@qq.com`。JS 追加进 `assets/main.js`、新增 `assets/guestbook.js`；样式统一在 `assets/style.css`。
@@ -10,7 +10,7 @@
 - [x] **删除已发布文章**（2026-09-05）：html-writer「🗂 已发布」管理对话框（列表 + 删除），`DELETE /api/post?slug=` 走同一 HMAC 鉴权；抽公共 `functions/_shared/auth.js`。
 - [x] **首页限 2 篇 + 分类管理页**（2026-09-05）：首页每栏动态文章最多 2 篇 +「查看全部→」；新增 `dream.html/murmur.html/awake.html`（瀑布流卡片 + 标题/全文搜索，共享 `assets/category.css|js`）；`/api/posts` 支持 `?category=` 并返回 `text`。
 - [x] **停用静态目录通道**（2026-09-05）：本地删除 awake 遗留静态文章，`node build.js` 重建首页（三栏归零占位）；`dream/whisper/awake` 全空，内容统一走 KV。
-- 上线配置：KV `MYDREAM_KV` 已绑定 + 密钥 `PUBLISH_PASSWORD` 已配置（production）。HEAD = `824c5a3`。
+- 上线配置：KV `MYDREAM_KV` 已绑定 + 密钥 `PUBLISH_PASSWORD` 已配置（production）。HEAD = `a1c6749`。
 
 ## 可选的下一步（按价值排序）
 - [ ] **slug 支持中文（可读链接）**：现在 `slugify()` 丢弃非 ASCII → 中文标题的链接是 `untitled-xxxx`（长文目录页 `/book?slug=untitled-…` 尤其显眼）。若改，需同时放宽 `_shared/books.js` 的 `SAFE_SLUG`（仍禁止 `/ \ : 空白 ..`）并保证前端一律 `encodeURIComponent`；旧数据不受影响。
@@ -29,6 +29,8 @@
 4. 导出正文含用户手写原始 HTML（marked 透传），不转义；自用可接受。
 5. 相对路径图片在导出后以「导出文件所在目录」解析，跨文件夹看图需自行处理路径。
 6. **Pages 不存在的路径会回退首页（HTTP 200）**：如已删除文章 / 旧静态页 URL 打开是首页而非 404（CF Pages 该项目的 SPA 行为）。若想严格 404，可加 `_redirects`（`/awake/* /404.html 404`）并新建 404.html，暂未做。
+7. **长文（分章作品）的行为约定**：① 章节**不出现在**首页/分类页列表与搜索里（只以长文卡片 + 目录页组织，避免一篇文反复出现）；② 新章只能**追加到末尾**（章序由 `book.chapters` 数组决定，暂无排序 UI）；③ 章节的「分类」跟随长文，不能单独改；④ 删除长文的最后一章会把整部长文一并删掉（有意设计）；⑤ `/book?slug=…` 依赖 CF Pages 干净 URL，本地 `python3 -m http.server` 需访问 `book.html?slug=…`。
+8. **中文标题的链接 slug 是 `untitled-xxxx`**（`slugify()` 只保留 ASCII + 时间戳），功能正常但 URL 不美观 —— 见上方「可选的下一步」第 1 条。
 
 ## 历史需求澄清记录
 - 编辑器形态：用户在「纯 textarea + 工具栏」与「EasyMDE」之间选前者的实现方向（未显式确认，当时按更轻量、预览/导出样式可控选了纯 textarea）。
