@@ -1,0 +1,113 @@
+/* =========================================================
+   book.css —— 长文目录页（/book?slug=…）
+   页头/页脚/背景复用 category.css，这里只加「目录 + 章节列表」样式，
+   配色与首页「星月夜 → 向日葵」一致（--accent 由 body 的 cat-* 决定）。
+   ========================================================= */
+
+.book-main {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 0 20px 6vh;
+}
+
+/* 「开始阅读」入口 */
+.book-start-wrap { text-align: center; margin: 0 0 26px; }
+.book-start {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 22px;
+  font-size: 0.92rem;
+  letter-spacing: 0.16em;
+  color: var(--ink);
+  text-decoration: none;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.06));
+  backdrop-filter: blur(8px);
+  transition: transform 0.25s ease, background 0.25s ease;
+}
+.book-start:hover {
+  transform: translateY(-2px);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0.1));
+}
+.book-start .go { color: var(--accent); }
+
+/* ---------- 章节列表 ---------- */
+.chapter-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.chapter-item { margin: 0 0 12px; }
+
+.chapter-link {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 14px 18px;
+  color: var(--ink);
+  text-decoration: none;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.035));
+  backdrop-filter: blur(8px);
+  box-shadow: 0 12px 30px rgba(2, 8, 24, 0.2);
+  transition: transform 0.25s ease, border-color 0.25s ease, background 0.25s ease;
+}
+.chapter-link:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.06));
+}
+
+.chapter-no {
+  flex: none;
+  min-width: 3.6em;
+  font-size: 0.76rem;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+  white-space: nowrap;
+}
+.chapter-title {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--serif);
+  font-size: 1.06rem;
+  line-height: 1.5;
+  letter-spacing: 0.03em;
+  word-break: break-word;
+}
+.chapter-date {
+  flex: none;
+  font-size: 0.74rem;
+  letter-spacing: 0.06em;
+  color: var(--ink-dim);
+  white-space: nowrap;
+}
+.chapter-go {
+  flex: none;
+  color: var(--accent);
+  opacity: 0.8;
+}
+
+/* 空态 / 加载失败 */
+.book-empty {
+  padding: 56px 16px;
+  text-align: center;
+  color: var(--ink-dim);
+  letter-spacing: 0.2em;
+  font-size: 0.95rem;
+}
+.book-empty em { font-style: normal; }
+
+@media (max-width: 640px) {
+  .chapter-date { display: none; }
+  .chapter-link { padding: 12px 14px; gap: 9px; }
+  .chapter-no { min-width: 3.2em; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chapter-link, .book-start { transition: none; }
+  .chapter-link:hover, .book-start:hover { transform: none; }
+}

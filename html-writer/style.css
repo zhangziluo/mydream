@@ -420,7 +420,8 @@ button { font-family: inherit; }
 .manage-open:disabled { opacity: 0.55; cursor: default; }
 
 /* ---------- 发布框：编辑已发布文章提示 + 另存为新文章 ---------- */
-.pub-edit-hint {
+.pub-edit-hint,
+.pub-book-hint {
   margin: 0 0 12px;
   padding: 8px 10px;
   border: 1px solid #bfdbfe;
@@ -445,6 +446,84 @@ button { font-family: inherit; }
   user-select: none;
 }
 .pub-new-field input { accent-color: var(--accent); }
+
+/* ---------- 长文管理对话框（分章作品） ---------- */
+.book-item { border-bottom: 1px solid var(--border); }
+.book-item:last-child { border-bottom: 0; }
+.book-item .manage-item { border-bottom: 0; padding-bottom: 6px; }
+
+.book-add,
+.book-toc,
+.book-del,
+.book-chapter-del {
+  flex: none;
+  padding: 5px 10px;
+  font-size: 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.book-add {
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  color: var(--accent);
+}
+.book-add:hover { background: #dbeafe; border-color: var(--accent); }
+.book-toc {
+  border: 1px solid var(--border);
+  background: #fafbfc;
+  color: var(--muted);
+}
+.book-toc:hover { background: #f0f2f5; color: var(--text); }
+.book-del,
+.book-chapter-del {
+  border: 1px solid #f3c6c6;
+  background: #fff5f5;
+  color: #b91c1c;
+}
+.book-del:hover,
+.book-chapter-del:hover { background: #fee2e2; border-color: var(--danger); }
+.book-add:disabled,
+.book-toc:disabled,
+.book-del:disabled,
+.book-chapter-del:disabled { opacity: 0.5; cursor: default; }
+
+/* 章节表：第 N 章 · 标题 + 打开 / 删除 */
+.book-chapters {
+  padding: 0 0 8px 22px;
+  background: #fafbfc;
+  border-top: 1px dashed var(--border);
+}
+.book-chapter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px 6px 0;
+  border-bottom: 1px solid #f0f2f5;
+}
+.book-chapter:last-child { border-bottom: 0; }
+.book-chapter-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 12.5px;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.book-chapter-date {
+  flex: none;
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.book-chapter-empty {
+  padding: 8px 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+.book-chapter .manage-open,
+.book-chapter .book-chapter-del { padding: 4px 9px; font-size: 11.5px; }
 
 /* ---------- 移动端适配 ---------- */
 @media (max-width: 820px) {

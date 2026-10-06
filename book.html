@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>长文目录 · Mydream</title>
+<meta name="description" content="Mydream 长文目录页：分章作品的全部章节，按顺序阅读。">
+<link rel="stylesheet" href="assets/category.css">
+<link rel="stylesheet" href="assets/book.css">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+</head>
+<!-- 默认 cat-dream：book.js 拿到长文分类后自动切到 cat-dream / cat-murmur / cat-awake -->
+<body class="cat-dream book-page">
+
+  <header class="cat-head">
+    <a class="cat-back" id="bookBack" href="index.html">← 返回首页</a>
+    <h1 class="cat-title" id="bookTitle">长文目录</h1>
+    <p class="cat-sub" id="bookMeta">加载中……</p>
+  </header>
+
+  <main class="book-main" aria-live="polite">
+    <div class="book-start-wrap" id="bookStart"></div>
+    <div id="bookChapters" class="book-chapters"></div>
+  </main>
+
+  <footer class="cat-foot">
+    <a href="index.html">← 返回 Mydream 首页</a>
+    <nav class="friend-links" aria-label="友情链接">
+      <a class="friend-link" href="https://myfami.cn/" target="_blank" rel="noopener">我的图书馆</a>
+      <a class="friend-link" href="https://ics-editor.zhang409543901.workers.dev/" target="_blank" rel="noopener">我的日程管理工具</a>
+    </nav>
+  </footer>
+
+<script src="assets/book.js"></script>
+</body>
+</html>

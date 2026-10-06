@@ -51,6 +51,7 @@
     <button type="button" id="mobileToggle" class="btn">👁 预览</button>
     <button type="button" id="publishBtn" class="btn" title="发布到主页">📤 发布</button>
     <button type="button" id="manageBtn" class="btn" title="管理已发布文章">🗂 已发布</button>
+    <button type="button" id="bookBtn" class="btn" title="长文管理（分章发布与章节列表）">📚 长文</button>
     <button type="button" id="openFileBtn" class="btn" title="打开本地 .md/.txt 文件或已发布文章">📂 打开文件</button>
     <button type="button" id="exportBtn" class="btn primary">⬇ 导出 HTML</button>
   </header>
@@ -115,6 +116,20 @@
     <label class="field">
       <span class="field-label">标题</span>
       <input type="text" id="pubTitle" maxlength="80" placeholder="默认取首行标题，可修改">
+    </label>
+
+    <label class="field">
+      <span class="field-label">长文（可选 · 分章发布）</span>
+      <select id="pubBook">
+        <option value="">— 单篇文章（不属于长文）—</option>
+        <option value="__new__">＋ 新建长文…</option>
+      </select>
+    </label>
+    <div class="pub-book-hint hidden" id="pubBookHint"></div>
+
+    <label class="field hidden" id="pubBookNewField">
+      <span class="field-label">新长文标题</span>
+      <input type="text" id="pubBookNewTitle" maxlength="80" placeholder="如：梦境编年史（本文将成为它的第 1 章）">
     </label>
 
     <label class="field">
@@ -186,6 +201,30 @@
 
     <div class="modal-actions">
       <button type="button" class="btn" data-close-open="1">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= 长文管理对话框 ================= -->
+<div id="bookModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="bookTitle">
+  <div class="modal-mask" data-close-book="1"></div>
+  <div class="modal-card manage-card">
+    <h2 id="bookTitle">长文管理</h2>
+    <p class="modal-sub">长文 = 分章发布的作品。发布框选择「长文」即可把正文作为新的一章加入；也可在此为某部长文直接添加新章。<br>每章保存原始 Markdown，可单独打开继续编辑。</p>
+
+    <div id="bookList" class="manage-list">
+      <div class="manage-empty">加载中……</div>
+    </div>
+
+    <label class="field">
+      <span class="field-label">发布密码（删除整部长文时使用）</span>
+      <input type="password" id="bookPassword" placeholder="请输入发布密码" autocomplete="off">
+    </label>
+
+    <div id="bookError" class="modal-error"></div>
+
+    <div class="modal-actions">
+      <button type="button" class="btn" data-close-book="1">关闭</button>
     </div>
   </div>
 </div>

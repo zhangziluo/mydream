@@ -45,6 +45,11 @@ TEMPLATES.forEach((t) => { TPL_MAP[t.id] = t; });
 const PUBLISH_TEMPLATE = { dream: 'dream', murmur: 'murmur', awake: 'wake' };
 const PUBLISH_API = '/api/publish';
 
+// 长文（分章作品）：列表 / 单部 / 发布框「新建长文」哨兵值
+const BOOKS_API = '/api/books';
+const BOOK_API = '/api/book';
+const BOOK_NEW_VALUE = '__new__';
+
 // 站点分类 → 中文名（发布管理列表展示用）
 const CATEGORY_NAMES = { dream: '梦', murmur: '梦呓', awake: '醒' };
 
@@ -763,6 +768,15 @@ const localFileInput = $('localFileInput');
 const pubEditHint   = $('pubEditHint');
 const pubNewField   = $('pubNewField');
 const pubNewPost    = $('pubNewPost');
+const bookBtn       = $('bookBtn');
+const bookModal     = $('bookModal');
+const bookList      = $('bookList');
+const bookPassword  = $('bookPassword');
+const bookError     = $('bookError');
+const pubBook       = $('pubBook');
+const pubBookHint   = $('pubBookHint');
+const pubBookNewField  = $('pubBookNewField');
+const pubBookNewTitle  = $('pubBookNewTitle');
 
 let currentTpl = DEFAULT_TPL;
 const undoStack = [];
@@ -774,6 +788,11 @@ let markedConfigured = false;
 let editingSlug = null;   // 当前已打开（编辑中）的已发布文章 slug；null = 新建/本地文件
 let editingTitle = '';    // 该文章标题（发布框「更新原文」提示用）
 let editingCategory = ''; // 该文章分类（发布框分类下拉默认值）
+let editingBook = '';     // 该文章所属长文 slug（'' = 单篇文章）
+let editingBookTitle = '';// 该文章所属长文标题
+let editingOrder = 0;     // 该文章在其长文中的章序（1 起；0 = 未知/非章节）
+let pendingBookSlug = ''; // 从「添加新章」带过来的预选长文（发布框默认选中它）
+let bookOptions = [];     // GET /api/books 最近一次结果（发布框下拉联动分类用）
 
 /* ---------- localStorage 小工具（隐私模式失败时静默降级） ---------- */
 function lsGet(key, fallback) {
@@ -1162,6 +1181,13 @@ function openPublishDialog() {
   if (editingSlug && editingCategory) pubCategory.value = editingCategory;
   pubPassword.value = '';
   pubNewPost.checked = false;
+  // 长文：编辑章节时跟随该章所属长文；否则用「添加新章」带过来的预选长文
+  pubBookNewTitle.value = '';
+  pubBook.value = '';
+  syncBookFieldUi();
+  const preferBook = editingBook || pendingBookSlug;
+  if (preferBook) pubBook.value = preferBook;   // 先乐观选中，下拉补全后校正
+  loadBookOptions(preferBook);
   syncPublishEditUi();
   publishModal.classList.remove('hidden');
   (pubTitle.value ? pubPassword : pubTitle).focus();
@@ -1169,6 +1195,84 @@ function openPublishDialog() {
 
 function closePublishDialog() {
   publishModal.classList.add('hidden');
+}
+
+/* ---------- 发布框「长文」下拉（分章发布） ---------- */
+
+/* 站点目录页地址：html-writer 在 /html-writer/ 下，站根目录页是 ../book?slug=… */
+function bookTocUrl(slug) {
+  try {
+    return new URL('../book?slug=' + encodeURIComponent(slug), location.href).href;
+  } catch (e) {
+    return '../book?slug=' + encodeURIComponent(slug);
+  }
+}
+
+/* 拉取长文列表填充下拉：— 单篇 — / 各长文 / ＋ 新建长文…；preferSlug 为默认选中项 */
+async function loadBookOptions(preferSlug) {
+  try {
+    const res = await fetch(BOOKS_API, { cache: 'no-store' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const books = await res.json();
+    bookOptions = Array.isArray(books) ? books : [];
+
+    pubBook.textContent = '';
+    const none = document.createElement('option');
+    none.value = '';
+    none.textContent = '— 单篇文章（不属于长文）—';
+    pubBook.appendChild(none);
+
+    bookOptions.forEach((b) => {
+      const opt = document.createElement('option');
+      opt.value = b.slug;
+      opt.textContent = '《' + b.title + '》 · 共 ' + (b.chapterCount || 0) + ' 章';
+      pubBook.appendChild(opt);
+    });
+
+    const nw = document.createElement('option');
+    nw.value = BOOK_NEW_VALUE;
+    nw.textContent = '＋ 新建长文…';
+    pubBook.appendChild(nw);
+
+    const keep = String(preferSlug || '');
+    const hit = Array.prototype.some.call(pubBook.options, (o) => o.value === keep);
+    pubBook.value = (keep && hit) ? keep : '';
+  } catch (err) {
+    // 拿不到长文列表（本地直开/后端未部署）时保留「单篇 / 新建」两项，不打扰用户
+    bookOptions = [];
+  }
+  syncBookFieldUi();
+}
+
+/* 下拉联动：新建长文才显示标题输入框；并给出本次发布将如何归入长文的说明 */
+function syncBookFieldUi() {
+  const value = pubBook.value;
+  const isNew = value === BOOK_NEW_VALUE;
+  pubBookNewField.classList.toggle('hidden', !isNew);
+  pubBookHint.classList.add('hidden');
+
+  if (isNew) {
+    pubBookHint.textContent = '将新建一部长文，本文作为它的第 1 章；下次写新章时在下拉里选同一部长文即可。';
+    pubBookHint.classList.remove('hidden');
+    return;
+  }
+
+  const sel = bookOptions.filter((b) => b.slug === value)[0];
+  // 选了某部长文 → 分类跟随该长文（与后端一致，避免同书分类不一致）
+  if (sel && CATEGORY_NAMES[sel.category]) pubCategory.value = sel.category;
+
+  if (sel) {
+    pubBookHint.textContent = (editingBook === sel.slug)
+      ? '正在编辑《' + sel.title + '》中的这一章：发布会原地更新本章，章序与链接不变。'
+      : '本文将作为《' + sel.title + '》的下一章发布（追加到目录末尾）。';
+    pubBookHint.classList.remove('hidden');
+    return;
+  }
+
+  if (editingBook) {
+    pubBookHint.textContent = '保持选择即原地更新《' + editingBookTitle + '》的这一章；改成「单篇文章」会把本章从长文中移出。';
+    pubBookHint.classList.remove('hidden');
+  }
 }
 
 /* 用密码对 message 计算 HMAC-SHA256，返回小写 hex（仅在本机计算） */
@@ -1191,9 +1295,20 @@ async function publishPost() {
   const category = pubCategory.value;
   const content = editor.value;
 
+  // 长文归属：'' = 单篇文章；具体 slug = 加入该长文；哨兵值 = 新建长文（书名在下方输入框）
+  const bookSel = pubBook.value;
+  const isNewBook = bookSel === BOOK_NEW_VALUE;
+  const bookSlug = (bookSel && !isNewBook) ? bookSel : '';
+  const bookTitle = isNewBook ? pubBookNewTitle.value.trim() : '';
+
   pubError.textContent = '';
   if (!content.trim()) { pubError.textContent = '正文为空，无法发布'; return; }
   if (!title) { pubError.textContent = '请填写标题'; pubTitle.focus(); return; }
+  if (isNewBook && !bookTitle) {
+    pubError.textContent = '请填写新长文标题';
+    pubBookNewTitle.focus();
+    return;
+  }
   if (!password) { pubError.textContent = '请填写发布密码'; pubPassword.focus(); return; }
   if (!ensureMarked()) { pubError.textContent = 'marked.js 未加载，无法发布'; return; }
   if (!window.crypto || !window.crypto.subtle) {
@@ -1234,7 +1349,7 @@ async function publishPost() {
     // 2) 密码只在本机参与签名，明文不上传；签名一次性、不可重放
     const digest = await hmacSha256Hex(password, chData.nonce);
 
-    // 3) 提交文章 + 原始 Markdown + nonce + 签名（带 slug = 原地更新原文）
+    // 3) 提交文章 + 原始 Markdown + 长文归属 + nonce + 签名（带 slug = 原地更新原文）
     const res = await fetch(PUBLISH_API, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1242,16 +1357,27 @@ async function publishPost() {
         title, content: doc, category,
         md: content,
         ...(updateSlug ? { slug: updateSlug } : {}),
+        ...(bookSlug ? { book: bookSlug } : {}),
+        ...(bookTitle ? { bookTitle } : {}),
         nonce: chData.nonce, digest,
       }),
     });
     if (res.ok) {
+      let payload = null;
+      try { payload = await res.json(); } catch (e) { /* 忽略非 JSON 响应 */ }
       closePublishDialog();
       editingSlug = null;
       editingTitle = '';
       editingCategory = '';
+      editingBook = '';
+      editingBookTitle = '';
+      editingOrder = 0;
+      // 记住本次长文 → 接着写下一章时发布框默认仍是同一部长文（分章上传）
+      pendingBookSlug = payload && payload.book ? String(payload.book) : '';
       syncPublishEditUi();
-      toast(updateSlug ? '已更新文章' : '发布成功');
+      if (updateSlug) toast('已更新文章');
+      else if (payload && payload.book) toast('已发布《' + payload.bookTitle + '》第 ' + payload.order + ' 章');
+      else toast('发布成功');
       return;
     }
     let serverMsg = '';
@@ -1278,6 +1404,14 @@ function fmtManageDate(ts) {
     + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
 }
 
+/* 文章元信息前缀：分类 ·（长文章节时）《书名》第 N 章 */
+function postMeta(p) {
+  let s = CATEGORY_NAMES[p.category] || p.category;
+  if (p.bookTitle) s += ' · 长文《' + p.bookTitle + '》第 ' + (p.order || '?') + ' 章';
+  else if (p.book) s += ' · 长文章节';
+  return s;
+}
+
 function setManageEmpty(text) {
   manageList.textContent = '';
   const empty = document.createElement('div');
@@ -1300,7 +1434,7 @@ function renderManageItems(items) {
     titleEl.textContent = '《' + p.title + '》';
     const metaEl = document.createElement('span');
     metaEl.className = 'manage-meta';
-    metaEl.textContent = (CATEGORY_NAMES[p.category] || p.category) + ' · ' + fmtManageDate(p.createdAt);
+    metaEl.textContent = postMeta(p) + ' · ' + fmtManageDate(p.createdAt);
     info.appendChild(titleEl);
     info.appendChild(metaEl);
 
@@ -1321,12 +1455,13 @@ async function loadManageList() {
   manageError.textContent = '';
   setManageEmpty('加载中……');
   try {
-    const res = await fetch('/api/posts', { cache: 'no-store' });
+    // chapters=1：连长文章节一起取回（长文本身在「📚 长文」里管理，这里过滤掉）
+    const res = await fetch('/api/posts?chapters=1', { cache: 'no-store' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const grouped = await res.json();
     const all = [];
     Object.keys(CATEGORY_NAMES).forEach((cat) => {
-      (grouped[cat] || []).forEach((p) => all.push(p));
+      (grouped[cat] || []).forEach((p) => { if (p.type !== 'book') all.push(p); });
     });
     all.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
     renderManageItems(all);
@@ -1346,17 +1481,16 @@ function closeManageDialog() {
   manageModal.classList.add('hidden');
 }
 
-async function deleteManagedPost(slug, title) {
-  const password = managePassword.value.trim();
-  if (!password) { manageError.textContent = '请先输入发布密码'; managePassword.focus(); return; }
-  if (!window.confirm('删除《' + title + '》？此操作不可恢复。')) return;
+/* 删除一篇文章（发布密码 + 一次性 nonce + HMAC → DELETE /api/post?slug=）。
+   返回 true 表示「已删除或已被删除」（调用方应刷新列表），false 表示未成功。 */
+async function requestDeletePost(slug, title, password, errorEl) {
+  if (!password) { errorEl.textContent = '请先输入发布密码'; return false; }
+  if (!window.confirm('删除《' + title + '》？此操作不可恢复。')) return false;
   if (!window.crypto || !window.crypto.subtle) {
-    manageError.textContent = '当前环境不支持安全操作（需 HTTPS）';
-    return;
+    errorEl.textContent = '当前环境不支持安全操作（需 HTTPS）';
+    return false;
   }
-  manageError.textContent = '';
-  const delBtn = manageList.querySelector('.manage-del[data-slug="' + slug + '"]');
-  if (delBtn) delBtn.disabled = true;
+  errorEl.textContent = '';
   try {
     // 领取一次性 nonce → 密码在本机签名 → DELETE
     const ch = await fetch('/api/challenge', { cache: 'no-store' });
@@ -1370,22 +1504,249 @@ async function deleteManagedPost(slug, title) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ nonce: chData.nonce, digest }),
     });
-    if (res.ok) { toast('已删除'); loadManageList(); return; }
+    if (res.ok) return true;
+
     let serverMsg = '';
     try {
       const data = await res.json();
       serverMsg = (data && (data.error || data.message)) || '';
     } catch (e) { /* ignore */ }
-    if (res.status === 401 || res.status === 403 || /密码错误/.test(serverMsg)) {
-      manageError.textContent = '密码错误';
-    } else {
-      manageError.textContent = serverMsg || ('删除失败（HTTP ' + res.status + '）');
-      if (res.status === 404) loadManageList();   // 已被删：刷新列表
+    if (res.status === 404) {
+      errorEl.textContent = '文章不存在（可能已被删除）';
+      return true;   // 视为已删，让调用方刷新列表
     }
+    if (res.status === 401 || res.status === 403 || /密码错误/.test(serverMsg)) {
+      errorEl.textContent = '密码错误';
+    } else {
+      errorEl.textContent = serverMsg || ('删除失败（HTTP ' + res.status + '）');
+    }
+    return false;
   } catch (err) {
-    manageError.textContent = '网络错误';
+    errorEl.textContent = '网络错误';
+    return false;
+  }
+}
+
+async function deleteManagedPost(slug, title) {
+  const delBtn = manageList.querySelector('.manage-del[data-slug="' + slug + '"]');
+  if (delBtn) delBtn.disabled = true;
+  try {
+    const ok = await requestDeletePost(slug, title, managePassword.value.trim(), manageError);
+    if (ok) { toast('已删除'); loadManageList(); }
   } finally {
     if (delBtn) delBtn.disabled = false;
+  }
+}
+
+/* ---------------- 8.2 长文管理（分章作品：列表 / 添加新章 / 目录 / 整部删除） ----------------
+   「📚 长文」：GET /api/books（含每部章节表）。每部长文可——
+     · ＋ 添加新章：关掉本框、打开发布框并预选该长文（当前正文即新章内容）；
+     · 目录：新窗口打开站点目录页 /book?slug=…（阅读页自带上一章 / 下一章）；
+     · 删除：DELETE /api/book?slug=（连全部章节一起删，需发布密码）；
+   章节可「打开」（取回原始 Markdown 继续编辑）或单独「删除」。 */
+function setBookEmpty(text) {
+  bookList.textContent = '';
+  const empty = document.createElement('div');
+  empty.className = 'manage-empty';
+  empty.textContent = text;
+  bookList.appendChild(empty);
+}
+
+function bookMetaText(b) {
+  return (CATEGORY_NAMES[b.category] || b.category)
+    + ' · 共 ' + (b.chapterCount || 0) + ' 章'
+    + ' · 更新 ' + fmtManageDate(b.updatedAt || b.createdAt);
+}
+
+function bookButton(cls, text, dataset) {
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = cls;
+  btn.textContent = text;
+  Object.keys(dataset || {}).forEach((k) => { btn.dataset[k] = dataset[k]; });
+  return btn;
+}
+
+function renderBooks(books) {
+  bookList.textContent = '';
+  if (!books.length) {
+    setBookEmpty('还没有长文。在「📤 发布」里选择「＋ 新建长文…」即可创建第一部长文。');
+    return;
+  }
+  books.forEach((b) => {
+    const item = document.createElement('div');
+    item.className = 'book-item';
+
+    // 头部：书名 + 元信息 + 操作按钮
+    const head = document.createElement('div');
+    head.className = 'manage-item';
+    const info = document.createElement('div');
+    info.className = 'manage-info';
+    const titleEl = document.createElement('span');
+    titleEl.className = 'manage-title';
+    titleEl.textContent = '《' + b.title + '》';
+    const metaEl = document.createElement('span');
+    metaEl.className = 'manage-meta';
+    metaEl.textContent = bookMetaText(b);
+    info.appendChild(titleEl);
+    info.appendChild(metaEl);
+
+    head.appendChild(info);
+    head.appendChild(bookButton('book-add', '＋ 添加新章', { slug: b.slug, title: b.title }));
+    head.appendChild(bookButton('book-toc', '目录', { slug: b.slug }));
+    head.appendChild(bookButton('book-del', '删除', {
+      slug: b.slug, title: b.title, chapters: String(b.chapterCount || 0),
+    }));
+    item.appendChild(head);
+
+    // 章节表：第 N 章 · 标题 + 打开 / 删除
+    const chapters = Array.isArray(b.chapters) ? b.chapters : [];
+    const chWrap = document.createElement('div');
+    chWrap.className = 'book-chapters';
+    if (!chapters.length) {
+      const none = document.createElement('div');
+      none.className = 'book-chapter-empty';
+      none.textContent = '还没有章节';
+      chWrap.appendChild(none);
+    }
+    chapters.forEach((c, i) => {
+      const row = document.createElement('div');
+      row.className = 'book-chapter';
+      const name = document.createElement('span');
+      name.className = 'book-chapter-name';
+      name.textContent = '第 ' + (i + 1) + ' 章 · ' + (c.title || '（无标题）');
+      const tip = document.createElement('span');
+      tip.className = 'book-chapter-date';
+      tip.textContent = c.createdAt ? fmtManageDate(c.createdAt) : '';
+      row.appendChild(name);
+      row.appendChild(tip);
+      row.appendChild(bookButton('manage-open book-chapter-open', '打开', {
+        slug: c.slug, title: c.title,
+      }));
+      row.appendChild(bookButton('book-chapter-del', '删除', {
+        slug: c.slug, title: c.title,
+      }));
+      chWrap.appendChild(row);
+    });
+    item.appendChild(chWrap);
+
+    bookList.appendChild(item);
+  });
+}
+
+/* 长文列表点击委托：添加新章 / 目录 / 删除整部 / 章节打开 / 章节删除 */
+function onBookListClick(e) {
+  const addBtn = e.target.closest('.book-add');
+  if (addBtn) { startNewChapter(addBtn.dataset.slug, addBtn.dataset.title); return; }
+
+  const tocBtn = e.target.closest('.book-toc');
+  if (tocBtn) {
+    const url = bookTocUrl(tocBtn.dataset.slug);
+    const w = window.open(url, '_blank', 'noopener');
+    if (w) w.opener = null;
+    return;
+  }
+
+  const delBtn = e.target.closest('.book-del');
+  if (delBtn && !delBtn.disabled) { deleteBook(delBtn); return; }
+
+  const chOpen = e.target.closest('.book-chapter-open');
+  if (chOpen && !chOpen.disabled) { openPublishedPost(chOpen.dataset.slug, chOpen.dataset.title); return; }
+
+  const chDel = e.target.closest('.book-chapter-del');
+  if (chDel && !chDel.disabled) deleteBookChapter(chDel);
+}
+
+async function loadBookList() {
+  bookError.textContent = '';
+  setBookEmpty('加载中……');
+  try {
+    const res = await fetch(BOOKS_API, { cache: 'no-store' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const books = await res.json();
+    renderBooks(Array.isArray(books) ? books : []);
+  } catch (err) {
+    setBookEmpty('获取长文列表失败（需在站点后端环境下使用）');
+  }
+}
+
+function openBookDialog() {
+  bookPassword.value = '';
+  bookError.textContent = '';
+  bookModal.classList.remove('hidden');
+  loadBookList();
+}
+
+function closeBookDialog() {
+  bookModal.classList.add('hidden');
+}
+
+/* 「＋ 添加新章」：当前编辑器内容将作为该长文的新章 → 打开发布框并预选该长文 */
+function startNewChapter(slug, title) {
+  pendingBookSlug = slug;
+  closeBookDialog();
+  openPublishDialog();
+  toast('将作为《' + title + '》的新章发布');
+}
+
+/* 删除章节：与文章删除同一链路（后端会同步维护长文章节表；长文空了自动删） */
+async function deleteBookChapter(btn) {
+  btn.disabled = true;
+  try {
+    const ok = await requestDeletePost(
+      btn.dataset.slug, btn.dataset.title, bookPassword.value.trim(), bookError
+    );
+    if (ok) { toast('已删除章节'); loadBookList(); }
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+/* 删除整部长文（含全部章节）：同一套一次性 nonce + HMAC 鉴权 */
+async function deleteBook(btn) {
+  const slug = btn.dataset.slug;
+  const title = btn.dataset.title;
+  const password = bookPassword.value.trim();
+  if (!password) { bookError.textContent = '请先输入发布密码'; bookPassword.focus(); return; }
+  const n = btn.dataset.chapters || '0';
+  if (!window.confirm('删除长文《' + title + '》' + (n !== '0' ? '及其 ' + n + ' 个章节' : '') + '？此操作不可恢复。')) return;
+  if (!window.crypto || !window.crypto.subtle) {
+    bookError.textContent = '当前环境不支持安全操作（需 HTTPS）';
+    return;
+  }
+  bookError.textContent = '';
+  btn.disabled = true;
+  try {
+    const ch = await fetch('/api/challenge', { cache: 'no-store' });
+    if (!ch.ok) throw new Error('challenge ' + ch.status);
+    const chData = await ch.json();
+    if (!chData || !chData.nonce) throw new Error('no nonce');
+    const digest = await hmacSha256Hex(password, chData.nonce);
+
+    const res = await fetch(BOOK_API + '?slug=' + encodeURIComponent(slug), {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nonce: chData.nonce, digest }),
+    });
+    if (res.ok) { toast('已删除长文'); loadBookList(); return; }
+
+    let serverMsg = '';
+    try {
+      const data = await res.json();
+      serverMsg = (data && (data.error || data.message)) || '';
+    } catch (e) { /* ignore */ }
+    if (res.status === 404) {
+      bookError.textContent = '长文不存在（可能已被删除）';
+      loadBookList();
+    } else if (res.status === 401 || res.status === 403 || /密码错误/.test(serverMsg)) {
+      bookError.textContent = '密码错误';
+    } else {
+      bookError.textContent = serverMsg || ('删除失败（HTTP ' + res.status + '）');
+    }
+  } catch (err) {
+    bookError.textContent = '网络错误';
+  } finally {
+    btn.disabled = false;
   }
 }
 
@@ -1417,7 +1778,7 @@ function renderOpenItems(items) {
     titleEl.textContent = '《' + p.title + '》';
     const metaEl = document.createElement('span');
     metaEl.className = 'manage-meta';
-    metaEl.textContent = (CATEGORY_NAMES[p.category] || p.category) + ' · ' + fmtManageDate(p.createdAt)
+    metaEl.textContent = postMeta(p) + ' · ' + fmtManageDate(p.createdAt)
       + (p.hasMd ? '' : ' · 旧版发布（无 Markdown）');
     info.appendChild(titleEl);
     info.appendChild(metaEl);
@@ -1440,12 +1801,13 @@ async function loadOpenFileList() {
   openFileError.textContent = '';
   setOpenListEmpty('加载中……');
   try {
-    const res = await fetch('/api/posts', { cache: 'no-store' });
+    // chapters=1：长文章节也能在这里打开编辑（长文本身不在列表中）
+    const res = await fetch('/api/posts?chapters=1', { cache: 'no-store' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const grouped = await res.json();
     const all = [];
     Object.keys(CATEGORY_NAMES).forEach((cat) => {
-      (grouped[cat] || []).forEach((p) => all.push(p));
+      (grouped[cat] || []).forEach((p) => { if (p.type !== 'book') all.push(p); });
     });
     all.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
     renderOpenItems(all);
@@ -1486,9 +1848,15 @@ async function openPublishedPost(slug, title) {
     editingSlug = slug;
     editingTitle = title || data.title || '';
     editingCategory = ['dream', 'murmur', 'awake'].includes(data.category) ? data.category : '';
+    // 长文归属：发布框「长文」下拉默认选中它，发布即原地更新本章
+    editingBook = data.book || '';
+    editingBookTitle = data.bookTitle || '';
+    editingOrder = Number(data.order) || 0;
+    pendingBookSlug = editingBook;   // 接着写下一章时同样默认这本书
     syncPublishEditUi();
     closeOpenFileDialog();
-    toast('已打开：《' + editingTitle + '》');
+    closeBookDialog();
+    toast('已打开：《' + editingTitle + '》' + (editingBook ? '（第 ' + editingOrder + ' 章）' : ''));
   } catch (err) {
     openFileError.textContent = '网络错误';
   }
@@ -1510,6 +1878,10 @@ function openLocalFiles(fileList) {
     editingSlug = null;   // 本地文件不属于「已发布文章」
     editingTitle = '';
     editingCategory = '';
+    editingBook = '';
+    editingBookTitle = '';
+    editingOrder = 0;
+    pendingBookSlug = ''; // 新文档不再默认归入上次的长文
     syncPublishEditUi();
     closeOpenFileDialog();
     toast('已打开：' + file.name);
@@ -1529,7 +1901,10 @@ function loadIntoEditor(text) {
 /* 根据 editingSlug 显示/隐藏发布框里的「更新原文」提示与「另存为新文章」勾选 */
 function syncPublishEditUi() {
   if (editingSlug) {
-    pubEditHint.textContent = '将更新已发布文章《' + editingTitle + '》（保留原发布时间与链接）';
+    const where = editingBook
+      ? '（长文《' + editingBookTitle + '》第 ' + (editingOrder || '?') + ' 章）'
+      : '';
+    pubEditHint.textContent = '将更新已发布文章《' + editingTitle + '》' + where + '（保留原发布时间与链接）';
     pubEditHint.classList.remove('hidden');
     pubNewField.classList.remove('hidden');
   } else {
@@ -1593,6 +1968,14 @@ function init() {
     const btn = e.target.closest('.manage-del');
     if (btn && !btn.disabled) deleteManagedPost(btn.dataset.slug, btn.dataset.title);
   });
+  // 长文管理（分章作品）
+  bookBtn.addEventListener('click', openBookDialog);
+  bookModal.addEventListener('click', (e) => {
+    if (e.target.closest('[data-close-book]')) closeBookDialog();
+  });
+  bookList.addEventListener('click', onBookListClick);
+  // 发布框「长文」下拉：切换时更新提示，并把分类切到该长文所属分类
+  pubBook.addEventListener('change', syncBookFieldUi);
   openFileBtn.addEventListener('click', openOpenFileDialog);
   openFilePickBtn.addEventListener('click', () => localFileInput.click());
   openFileModal.addEventListener('click', (e) => {
@@ -1611,6 +1994,7 @@ function init() {
     if (e.key !== 'Escape') return;
     if (!publishModal.classList.contains('hidden')) closePublishDialog();
     if (!manageModal.classList.contains('hidden')) closeManageDialog();
+    if (!bookModal.classList.contains('hidden')) closeBookDialog();
     if (!openFileModal.classList.contains('hidden')) closeOpenFileDialog();
   });
   mobileToggle.addEventListener('click', toggleMobileView);

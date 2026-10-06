@@ -21,15 +21,20 @@ html-writer/
 仓库根（发布根）另含发布相关文件：
 ```
 functions/
-├── _shared/auth.js      # 共用鉴权 verifyChallenge（nonce+HMAC），publish/post 删除共用
+├── _shared/auth.js      # 共用鉴权 verifyChallenge（nonce+HMAC），publish/post 删除/book 删除共用
+├── _shared/books.js     # 长文（分章作品）共用逻辑：读/写 book:<slug>、章节表 upsert/remove、唯一 slug
 ├── api/challenge.js     # GET  /api/challenge（发布/删除前领取一次性 nonce）
-├── api/publish.js       # POST /api/publish（HMAC 校验→存 KV post:<slug>）
-├── api/posts.js         # GET /api/posts（分组）；?category= → 扁平数组；含 text 全文（分类页搜索用）
-└── api/post.js          # GET ?slug= 阅读；DELETE ?slug= 删除（HMAC 校验）
-index.html               # 首页（build.js 生成静态卡片占位；每栏动态显示最新 2 篇已发布文章）
+├── api/publish.js       # POST /api/publish（HMAC 校验→存 KV post:<slug>；带 book/bookTitle 则并入长文）
+├── api/posts.js         # GET /api/posts（分组）；?category= → 扁平数组；?chapters=1 → 含章节；含 text 全文
+├── api/post.js          # GET ?slug= 阅读（章节自动注入上一章/目录/下一章）；DELETE ?slug= 删除（HMAC）
+├── api/books.js         # GET  /api/books（长文列表，html-writer 用）
+└── api/book.js          # GET  /api/book?slug=（目录数据）；DELETE ?slug=（删整部+全部章节，HMAC）
+index.html               # 首页（build.js 生成静态卡片占位；每栏动态显示最新 2 篇/部已发布内容）
 dream.html / murmur.html / awake.html   # 分类管理页（data-category 区分）
-assets/main.js           # 首页：拉 /api/posts，每栏 slice(0,2) 追加卡片
-assets/category.js|css   # 分类页：瀑布流卡片 + 标题/正文全文搜索
+book.html                # 长文目录页 /book?slug=…（书名 + 章数 + 开始阅读 + 章节列表）
+assets/main.js           # 首页：拉 /api/posts，每栏 slice(0,2) 追加卡片（长文卡片 → /book?slug=）
+assets/category.js|css   # 分类页：瀑布流卡片 + 标题/正文全文搜索（长文卡片带「长文 · 共 N 章」）
+assets/book.js|css       # 目录页：拉 /api/book?slug=… 渲染章节列表（/book 页专用样式）
 assets/style.css         # 首页与分类页共用视觉（--dream/murmur/wake、.col 等）
 build.js                 # 扫描 dream/whisper/awake 目录生成静态卡片（当前目录全空，输出 0 张）
 dream/ whisper/ awake/   # 静态板块目录（当前为空，发布已走 KV）
@@ -47,7 +52,8 @@ wrangler.toml            # KV 绑定声明 + 本地联调说明
 5. **工具栏**：`runCommand(cmd)`；`snapshot/undo/syncUndoBtn`（撤销栈上限 100，仅工具栏操作入栈）；`wrapSel`（占位符自动选中）；`prefixLines`（多行逐行加/去前缀 toggle）；`insertCodeBlock/insertLink/insertImage/insertHr`；`updateWordCount`（去空白计数）；`scheduleSave`（400ms 防抖）。
 6. **实时预览**：`previewDocHtml()` → `render()`（doc.write 进 iframe，防抖 200ms，渲染后尽量恢复滚动位置）。
 7. **导出**：`readCssText`（fetch→EMBEDDED 兜底，带缓存 cssCache）→ `exportHtml` → `buildStandaloneDoc()` → `download()`（Blob+`<a download>`）；`makeTitle`、`escapeHtml`。
-8. **发布到主页 + 发布管理**：`guessTitle`（首行 `# 标题`）→ `publishPost()`（按 PUBLISH_TEMPLATE 渲染单文件 HTML → `/api/challenge` 取 nonce → 本机 HMAC → POST `/api/publish`）；管理：`openManageDialog/closeManageDialog` → `loadManageList`（GET `/api/posts` 绝对路径）→ `deleteManagedPost`（confirm + nonce/HMAC → DELETE `/api/post?slug=`）；共用 `hmacSha256Hex`。成功 toast「发布成功 / 已删除」/ 401 红字「密码错误」/ fetch 异常「网络错误」。
+8. **发布到主页 + 发布管理**：`guessTitle`（首行 `# 标题`）→ `publishPost()`（按 PUBLISH_TEMPLATE 渲染单文件 HTML → `/api/challenge` 取 nonce → 本机 HMAC → POST `/api/publish`，可带 `book`/`bookTitle` 归入长文）；管理：`openManageDialog/closeManageDialog` → `loadManageList`（GET `/api/posts?chapters=1`，过滤 `type==='book'`）→ `requestDeletePost()`（共用，confirm + nonce/HMAC → DELETE `/api/post?slug=`）；共用 `hmacSha256Hex`。成功 toast「发布成功 / 已发布《书名》第 N 章 / 已更新文章 / 已删除」/ 401 红字「密码错误」/ fetch 异常「网络错误」。
+8.5 **长文管理（📚 长文）**：`openBookDialog` → `loadBookList`（GET `/api/books`）→ `renderBooks`（每部：《书名》+ 分类·章数·更新时间 + `book-add / book-toc / book-del` + 章节表行 `book-chapter-open / book-chapter-del`）→ 列表点击委托 `onBookListClick`（添加新章 = `startNewChapter` 关框并打开发布框预选该书；目录 = `bookTocUrl` 新窗口开站点目录页；删除 = `deleteBook` DELETE `/api/book`）；发布框长文下拉由 `loadBookOptions` 填充、`syncBookFieldUi` 联动（新建书名输入框 / 分类跟随 / 提示文案）。
 9. **移动端**：`toggleMobileView/syncMobileBtn`（`#app.show-preview`）。
 10. `init()`：登录判定 + 全部事件绑定（发布/管理按钮、两个 modal 开关、委托删除、Esc 双弹窗、撤销/导出/预览切换等），脚本尾部直接执行。
 
@@ -77,7 +83,13 @@ wrangler.toml            # KV 绑定声明 + 本地联调说明
 - 前端分类→模板：`PUBLISH_TEMPLATE = { dream:'dream', murmur:'murmur', awake:'wake' }`（注意站点分类键 `awake` 对应模板 `wake`）。HMAC 依赖 `crypto.subtle`（HTTPS/localhost 才可用；file:// 发布本就无后端，提示网络错误）。
 - 上线需在 Cloudflare 控制台：绑定 KV namespace `MYDREAM_KV` + 添加密钥 `PUBLISH_PASSWORD`。**wrangler v4 的 `pages dev` 不读 toml 的 `[[kv_namespaces]]`，本地要用 `--kv MYDREAM_KV` 显式绑定**。
 
-## 易踩坑 / 注意事项（重要）
+### 长文（分章作品，第十二轮）
+- **数据模型**：`book:<slug>` = 长文（`chapters` 数组顺序即章序）；`post:<slug>` 带 `book` 字段即章节（`category` 强制等于长文分类）。旧文章无 `book` → 单篇，完全兼容。
+- **分章上传**：发布框「长文」下拉 = `— 单篇 —` / 各长文 / `＋ 新建长文…`。传 `book`（已有）→ 新章**追加到末尾**、更新章节**保持原章序**；传 `bookTitle` → 先建长文再落第 1 章；不传 → 单篇。原本属于长文的文章改成不传 → 自动移出，长文空了连 `book:<slug>` 一起删。
+- **展示**：`/api/posts` 默认**不返回章节**、把长文当 `type:'book'` 卡片（`chapterCount`）；`?chapters=1` 才带章节（html-writer 列表用，前端过滤 `type==='book'`）。首页/分类页卡片按 `type` 分流到 `/book?slug=`（目录页）或 `/api/post?slug=`（阅读页）。
+- **目录页 + 章节导航**：`book.html`（干净 URL `/book?slug=`）拉 `/api/book` 渲染章节列表；阅读章节时 `api/post.js` 在返回的成品 HTML 里**注入**导航（`NAV_CSS` + `<nav class="hw-chapter-nav">` 插到 `</article>` 之前）。**必须服务端动态注入**：否则新加一章后，已发布的旧章不会出现「下一章」。
+- **鉴权复用**：删章节 = `DELETE /api/post`（顺带维护章节表）；删整部 = `DELETE /api/book`（删长文 + 全部章节）——都走 `/api/challenge` + HMAC。
+
 
 1. **marked 必须锁版本 4.3.0**：`https://cdn.jsdelivr.net/npm/marked@4.3.0/marked.min.js`。marked 新版（5+ 尤其 12+）已把根目录 `marked.min.js` 移除、主推 ESM，裸地址 `…/marked/marked.min.js` 会 404。
 2. **file:// 下浏览器禁止 fetch 本地文件** → 导出 CSS 读不到 → 因此 `EMBEDDED_CSS` 必须与 css 文件保持同步（HTTP 部署时导出会优先 fetch 真实文件，副本不生效）。
@@ -87,6 +99,9 @@ wrangler.toml            # KV 绑定声明 + 本地联调说明
 6. 相对路径图片在预览里相对 `html-writer/` 目录解析；导出后相对导出文件所在目录解析。
 7. `breaks:true` → 单换行即 `<br>`（符合中文写作习惯），与多数所见即所得编辑器一致。
 8. 页面与预览**完全隔离**：页面自身样式在 style.css；预览/导出排版在 preview.css + templates——别把文章排版写进 style.css。
+9. **`/book?slug=…` 是干净 URL**：线上靠 CF Pages 把 `book.html` 映射到 `/book`（本地 `python3 -m http.server` 直开请用 `book.html?slug=…`；`file://` 下目录页会因无 Functions 而报「加载失败」，属预期）。
+10. **章节不进首页/分类页列表**：它们只出现在所属长文的卡片（→ 目录页）与 html-writer 列表里；要临时拿到含章节的列表用 `GET /api/posts?chapters=1`（此时长文卡片也在，前端按 `type` 过滤）。
+11. **改名/移动章节不要手改 KV**：一切走 `/api/publish`（带/不带 `book`），由 `_shared/books.js` 维护 `chapters` 数组，避免章序错乱或丢失。
 
 ## 运行 / 部署
 - 本地：双击 `index.html`（需联网加载 marked；file:// 下「发布」会因无后端提示网络错误，属预期）；`python3 -m http.server` 亦可。

@@ -1,6 +1,6 @@
 # 📁 Memory Bank — Mydream 站点（html-writer 写作工具 + Pages 发布系统）
 
-写 Markdown → 一键导出「样式内联、可离线打开」单文件 HTML；并可经**挑战-应答 HMAC** 发布 / 删除到站点 KV，首页与分类页（瀑布流 + 全文搜索）动态展示。仓库根即发布根，本 memory-bank 覆盖整个站点。
+写 Markdown → 一键导出「样式内联、可离线打开」单文件 HTML；并可经**挑战-应答 HMAC** 发布 / 删除到站点 KV，首页与分类页（瀑布流 + 全文搜索）动态展示；**长文（分章作品）**可分章上传、站点目录页 + 阅读页「上一章 / 下一章」导航。仓库根即发布根，本 memory-bank 覆盖整个站点。
 
 本目录用于持久记录项目进度与上下文，便于后续（人或 AI）快速恢复状态。
 
@@ -10,7 +10,7 @@
 | `architecture.md` | 项目结构、各文件职责、关键实现与「坑」 |
 | `roadmap.md` | 待办 / 已知问题 / 需求澄清记录 |
 
-> 更新时间：2026-09-06（会话收盘，HEAD `824c5a3`）
+> 更新时间：2026-10-06（第十二轮「长文（分章作品）」已实现并通过 mock 测试，**改动尚未提交**）
 > 仓库根：`/Users/zhangziluo/Downloads/Mydream`（html-writer 位于 `html-writer/`）
 > 线上：Pages `mydream` → `https://mydream-4y4.pages.dev`（GitHub main 推送自动构建）
 > html-writer 运行：直接双击 `index.html`（联网加载 CDN marked）或访问线上 `/html-writer/`

@@ -138,6 +138,16 @@ body {
   color: var(--accent);
   white-space: nowrap;
 }
+/* 长文（分章作品）标记 */
+.cat-card .card-tag {
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  color: var(--ink-dim);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 6px;
+  padding: 1px 6px;
+  white-space: nowrap;
+}
 .cat-card h2 {
   margin: 0 0 6px;
   font-family: var(--serif);

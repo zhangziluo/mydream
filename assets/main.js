@@ -36,10 +36,12 @@
      保留 build.js 生成的静态卡片与占位。 */
   function createCard(post) {
     var li = document.createElement('li');
+    // 长文（分章作品）卡片：点击进目录页；单篇文章：直接进阅读页
+    var isBook = post.type === 'book';
 
     var a = document.createElement('a');
     a.className = 'work';
-    a.href = 'api/post?slug=' + encodeURIComponent(post.slug);
+    a.href = (isBook ? '/book?slug=' : 'api/post?slug=') + encodeURIComponent(post.slug);
     a.target = '_blank';
     a.rel = 'noopener';
 
@@ -60,7 +62,7 @@
 
     var badge = document.createElement('span');
     badge.className = 'w-badge';
-    badge.textContent = 'html';
+    badge.textContent = isBook ? '长文' : 'html';
 
     var go = document.createElement('span');
     go.className = 'w-go';

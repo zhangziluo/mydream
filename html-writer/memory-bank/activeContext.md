@@ -15,12 +15,13 @@
 
 **代码布局（仓库根）**
 - 首页 `index.html` + `assets/style.css` + `assets/main.js`：静态卡片由 build.js 生成；每栏动态显示**最新 2 篇**已发布文章；栏目标题 /「查看全部 →」→ 分类页；页脚含「赞助（二维码弹窗）/ 留言 / 关于 / ✉ 联系」入口 + 友情链接（我的图书馆 myfami.cn / 我的日程管理工具 ics-editor）。留言板 `guestbook.html` + `assets/guestbook.js`（纯前端 localStorage，昵称随机 + 最多 50 条），关于页 `about.html`（含邮箱联系方式），样式统一在 `assets/style.css`。全站 favicon = `assets/favicon.png`（256 方形圆角、星月夜→向日葵渐变 + 月牙/星点），7 个 HTML 均已在 `<head>` 加 `<link rel="icon">`（含 html-writer 用 `../assets/favicon.png`）。
-- 分类管理页 `dream.html / murmur.html / awake.html` + `assets/category.css|js`：每分类一页，CSS 多列瀑布流 + 顶部搜索框（标题 + 正文全文本地过滤）。
-- API：`functions/api/{challenge,publish,posts,post}.js` + 共用鉴权 `functions/_shared/auth.js`。
-- 写作工具 `html-writer/`（登录遮罩 → Markdown 编辑器 → 导出 / 📤发布 / 🗂已发布管理删除 / 📂打开文件：本地 .md/.txt 打开 + 已发布文章编辑（更新原文 / 另存为新文章））；已带 favicon（`../assets/favicon.png`）。
+- 分类管理页 `dream.html / murmur.html / awake.html` + `assets/category.css|js`：每分类一页，CSS 多列瀑布流 + 顶部搜索框（标题 + 正文全文本地过滤）；长文卡片额外显示「长文 · 共 N 章」标记并跳目录页。
+- 长文目录页 `book.html` + `assets/book.css|js`：`/book?slug=…`，书名 + 分类·章数·更新时间 +「从第一章开始」+ 章节列表（第 N 章 · 标题 → 阅读页）。
+- API：`functions/api/{challenge,publish,posts,post,books,book}.js` + 共用鉴权 `functions/_shared/auth.js` + 长文共用逻辑 `functions/_shared/books.js`。
+- 写作工具 `html-writer/`（登录遮罩 → Markdown 编辑器 → 导出 / 📤发布（可归入长文分章）/ 🗂已发布管理删除 / 📚长文管理 / 📂打开文件：本地 .md/.txt 打开 + 已发布文章编辑（更新原文 / 另存为新文章））；已带 favicon（`../assets/favicon.png`）。
 - 板块静态目录 `dream/ whisper/ awake/` **当前全空**（不再用静态目录发新文）；`build.js` 仍在 build 命令里执行（输出 0 张卡片占位，无害）。
 
-**线上数据（收盘快照，会变）**：`/api/posts` → dream 0 / murmur 3 / awake 2（最新 murmur《9月5日的日记》hasMd=true；awake 2 篇为旧版无 md 文章）。增删改都在线进行（html-writer「🗂 已发布」+「📂 打开文件」）。
+**线上数据（收盘快照，会变）**：`/api/posts` → dream 0 / murmur 3 / awake 2（最新 murmur《9月5日的日记》hasMd=true；awake 2 篇为旧版无 md 文章）。增删改都在线进行（html-writer「🗂 已发布」+「📂 打开文件」+「📚 长文」）。**注意：以上为第十二轮改动前的线上状态；长文相关数据要等本次改动上线后才会出现。**
 
 **关键经验 / 坑（详见过往轮次与 architecture「易踩坑」）**
 1. `wrangler kv` CLI 在仓库含 `wrangler.toml` 时操作的是**本地模拟**；判断/清理线上 KV 请走 REST（`/accounts/{acct}/storage/kv/namespaces/{ns}/…`）。**切勿删除 KV 里名为 `PUBLISH_PASSWORD` 的键**（CF 内部使用，删了发布即坏）。
@@ -28,6 +29,36 @@
 3. Pages Functions 的绑定 / 密钥在**构建时快照**：改完必须再部署一次（空 commit 即可）才生效。
 4. 裸 REST 用 OAuth token 过期会 401；`wrangler …` 会自动刷新 token。
 5. CF Pages 会把 `/xxx.html` 308 到 `/xxx`（干净 URL）；不存在的路径会**回退首页 200**（SPA 行为）。
+
+## 第十二轮：长文（分章作品）——分章上传 + 目录页 + 上一章/下一章（2026-10-06，未提交）
+
+需求：① html-writer 支持长文管理，可**分章上传、选择长文标题、添加新章**；② 网页端增加长文查看，点长文链接 → **目录页**，阅读页加**上一章 / 下一章**。
+
+**数据模型（KV）**
+- `book:<bookSlug>` → `{ slug, title, category, createdAt, updatedAt, chapters: [{ slug, title, createdAt }] }`（`chapters` 数组顺序 = 章序）。
+- `post:<slug>` 新增可选字段 `book`（带此字段即某长文的章节）；旧数据无该字段 → 天然兼容为单篇文章。章节的 `category` 强制跟随长文。
+
+**后端（functions/）**
+1. 新增 `_shared/books.js`：长文共用逻辑（`slugify/uniqueSlug/readBook/saveBook/upsertChapter/removeChapter/bookNote/bookText`、`SAFE_SLUG`、`CATEGORIES`、前缀常量）。
+2. 新增 `api/books.js`（GET 长文列表，含 `chapterCount/note/chapters`，按 `updatedAt` 降序）、`api/book.js`（GET 目录数据 / DELETE 整部+全部章节，走同一 nonce+HMAC 鉴权）。
+3. `api/publish.js`：新增可选 `book`（加入已有长文，分类跟随该书）与 `bookTitle`（新建长文）；更新章节保持原章序；**改书 / 退出长文**时从原长文移除，长文空了自动删除；响应回 `{ slug, updated, book?, bookTitle?, order? }`。
+4. `api/posts.js`：默认**不出章节**（章节由目录页统一组织），长文作为 `type:'book'` 卡片进入原分组（`chapterCount`、`note=「共 N 章 · 最新《…》」`、`text=各章标题拼接`）；`?chapters=1` 时连长文章节一起返回（并给章节加 `book/bookTitle/order`）——html-writer 的「🗂 已发布 / 📂 打开文件」用它。
+5. `api/post.js`：阅读章节时**服务端注入**「← 上一章 / 目录 · 第 n / N 章 / 下一章 →」导航（插在 `</article>` 前，带内联 `<style>`，书名章名 HTML 转义、`@media print` 隐藏）——保证新增章节后旧章节也自动出现新链接；`?md=1` 增加 `book/bookTitle/order/chapterCount`；DELETE 时同步维护长文章节表（空了删整部）。
+
+**网页端**
+6. 新增 `book.html` + `assets/book.css` + `assets/book.js`：目录页 `/book?slug=…`（页头复用 `category.css`，分类配色随长文分类切换，含「从第一章开始」+ 章节列表 + 返回分类页 + 友情链接）。
+7. `assets/main.js` / `assets/category.js`：卡片按 `type` 分流 —— 长文 → `/book?slug=…`（首页角标「长文」、分类页「长文 · 共 N 章」+「查看目录 →」），单篇不变；`assets/category.css` 加 `.card-tag`。
+
+**html-writer**
+8. 顶栏新增「📚 长文」对话框：每部长文显示《书名》+ 分类·章数·更新时间 + 「＋ 添加新章 / 目录 / 删除」+ 章节表（第 N 章 · 标题 + 打开 / 删除）；「目录」新窗口打开站点目录页。
+9. 发布框新增「长文」下拉：`— 单篇 —` / 各长文（`《书名》 · 共 N 章`） / `＋ 新建长文…`（展开书名输入框）；选书后分类自动跟随并给出「作为下一章发布 / 原地更新本章」提示；发布成功记住该书 → **连续写下一章时默认仍是同一部**（分章上传）。
+10. 发布 / 删除逻辑：发布请求带 `book` 或 `bookTitle`；删除文章抽出 `requestDeletePost()`（管理列表与长文对话框共用），新增长文整部删除；「已发布 / 打开文件」列表改用 `?chapters=1` 并过滤长文卡片、章节行显示「长文《书名》第 N 章」。
+
+**验证（本机，无 jsdom —— 用自建轻量 DOM 桩 + 内存 KV）**
+- `node --check` 全部改动 JS 通过。
+- 后端 mock 测试 `/tmp/hwtest/api.test.mjs`：**63/63 通过**（新建长文→分章上传→章序/分类跟随→列表与目录→导航注入（首章无上一章、末章无下一章、第 n/N 章）→原地更新保章序→移出长文→换书→删章节自动删空文→删整部→401/400/404 分支→书名章名转义→**旧数据（无 book/type）兼容**）。
+- 前端测试 `/tmp/hwtest/ui.test.mjs`（`/tmp/hwtest/dom.mjs` 桩）：**77/77 通过**（main.js 长文卡片 href/角标、category.js 标记与文案、book.js 目录渲染与 404 空态、app.js 添加新章预选、分章发布 body、新建长文校验、长文管理对话框渲染与四个操作、列表 chapters=1 + 章节归属 + 打开章节编辑 + 原地更新）。
+- 本地静态服务：`/book.html`、`/assets/book.js`、`/assets/book.css`、`/html-writer/` 均 200。
 
 ## 第十一轮：全站 favicon（2026-09-06）
 

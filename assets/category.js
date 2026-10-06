@@ -25,9 +25,12 @@
   }
 
   function makeCard(post) {
+    // 长文（分章作品）卡片：点击进目录页；单篇文章：直接进阅读页
+    var isBook = post.type === 'book';
+
     var a = document.createElement('a');
     a.className = 'cat-card';
-    a.href = '/api/post?slug=' + encodeURIComponent(post.slug);
+    a.href = (isBook ? '/book?slug=' : '/api/post?slug=') + encodeURIComponent(post.slug);
     a.target = '_blank';
     a.rel = 'noopener';
 
@@ -37,6 +40,12 @@
     date.className = 'card-date';
     date.textContent = fmtDate(post.createdAt);
     top.appendChild(date);
+    if (isBook) {
+      var tag = document.createElement('span');
+      tag.className = 'card-tag';
+      tag.textContent = '长文 · 共 ' + (post.chapterCount || 0) + ' 章';
+      top.appendChild(tag);
+    }
 
     var h = document.createElement('h2');
     h.textContent = '《' + post.title + '》';
@@ -48,7 +57,7 @@
 
     var go = document.createElement('span');
     go.className = 'card-go';
-    go.textContent = '阅读全文 →';
+    go.textContent = isBook ? '查看目录 →' : '阅读全文 →';
 
     a.appendChild(top);
     a.appendChild(h);
