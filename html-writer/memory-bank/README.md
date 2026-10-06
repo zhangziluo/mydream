@@ -10,7 +10,7 @@
 | `architecture.md` | 项目结构、各文件职责、关键实现与「坑」 |
 | `roadmap.md` | 待办 / 已知问题 / 需求澄清记录 |
 
-> 更新时间：2026-10-06（第十二轮「长文（分章作品）」已实现并通过 mock 测试，**改动尚未提交**）
+> 更新时间：2026-10-06（第十二轮「长文（分章作品）」已提交并上线，commit `f453402`）
 > 仓库根：`/Users/zhangziluo/Downloads/Mydream`（html-writer 位于 `html-writer/`）
 > 线上：Pages `mydream` → `https://mydream-4y4.pages.dev`（GitHub main 推送自动构建）
 > html-writer 运行：直接双击 `index.html`（联网加载 CDN marked）或访问线上 `/html-writer/`

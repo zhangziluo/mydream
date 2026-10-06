@@ -1,7 +1,7 @@
 # 待办 / 已知问题 / 需求记录（Roadmap）
 
 ## 已完成（近期新增功能，回顾见 activeContext）
-- [ ] **长文（分章作品）**（2026-10-06，**已实现待提交**）：html-writer 支持「📚 长文」管理（长文列表 + 每部章节表 + ＋添加新章 / 目录 / 删除整部 / 章节打开·删除）；发布框新增「长文」下拉（选择已发布长文标题，或「＋ 新建长文…」），选书后分类跟随长文、发布即成为该文一章（新章追加到末尾，编辑章节原地更新）；网页端新增目录页 `book.html`（`/book?slug=…`）+ 阅读页服务端注入「← 上一章 / 目录 · 第 n / N 章 / 下一章 →」；新增 API `/api/books`、`/api/book`（GET 目录 / DELETE 整部），`/api/publish`、`/api/posts`、`/api/post` 扩展长文字段。
+- [x] **长文（分章作品）**（2026-10-06，commit `f453402` **已上线**）：html-writer 支持「📚 长文」管理（长文列表 + 每部章节表 + ＋添加新章 / 目录 / 删除整部 / 章节打开·删除）；发布框新增「长文」下拉（选择已发布长文标题，或「＋ 新建长文…」），选书后分类跟随长文、发布即成为该文一章（新章追加到末尾，编辑章节原地更新）；网页端新增目录页 `book.html`（`/book?slug=…`）+ 阅读页服务端注入「← 上一章 / 目录 · 第 n / N 章 / 下一章 →」；新增 API `/api/books`、`/api/book`（GET 目录 / DELETE 整部），`/api/publish`、`/api/posts`、`/api/post` 扩展长文字段。
 - [x] **全站 favicon**（2026-09-06）：`assets/favicon.png`（256 方形圆角，星月夜→向日葵渐变 + 月牙/星点），纯 Node（内置 zlib 手写 PNG 编码）生成、无外部库；7 个页面（首页/三分类/留言/关于/html-writer）均已加 `<link rel="icon">`。
 - [x] **全站页脚友情链接**（2026-09-06）：6 个公开页面 footer 加入「我的图书馆（myfami.cn）/ 我的日程管理工具（ics-editor Workers）」两个兄弟链接（外链新窗口），样式入 `assets/style.css` 与 `assets/category.css`。
 - [x] **站点页脚扩展**（2026-09-06）：首页 footer 去 Dream OS，新增「赞助」二维码弹窗（assets/images/afdian-qr.png + wechat-reward.png）、纯前端留言板 `guestbook.html`（localStorage：`guest_name` 随机昵称 / `guestbook_messages` 上限 50 删最早，倒序 + 相对时间，textContent 防 XSS）、`about.html` 关于页、`✉ mailto:409543901@qq.com`。JS 追加进 `assets/main.js`、新增 `assets/guestbook.js`；样式统一在 `assets/style.css`。

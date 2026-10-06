@@ -11,7 +11,7 @@
 - CF 账号：`Zhang409543901@gmail.com's Account`（id `55b7fa0b926a9a73a6c4f8b1e39ff300`）。
 - KV：`MYDREAM_KV`（id `3b88c00c81fa4c829febc8a2570098c8`），已绑定 Pages 项目 production + preview。
 - 密钥：`PUBLISH_PASSWORD` 已配置于 CF production（值由用户掌握；本地副本在 `.dev.vars`，已 gitignore）。html-writer 页面访问密码在 `app.js` 顶部 `PASSWORD = '19930214'`（二者不同）。
-- HEAD：`824c5a3`（最近一次内容变更：favicon 生成并接入全部页面；本日历史：`800f87b` 全站页脚友情链接、`896c7dc` 页脚扩展/赞助/留言板/关于、`7020e33` 打开文件+编辑已发布文章）。
+- HEAD：`f453402`（**长文分章发布：目录页 + 上一章/下一章**；此前本日历史：`6493df6` memory-bank 存档、`824c5a3` favicon、`800f87b` 页脚友情链接、`896c7dc` 页脚扩展/赞助/留言板/关于、`7020e33` 打开文件+编辑已发布文章）。**Pages 构建已自动完成**（无需手工 wrangler deploy）。
 
 **代码布局（仓库根）**
 - 首页 `index.html` + `assets/style.css` + `assets/main.js`：静态卡片由 build.js 生成；每栏动态显示**最新 2 篇**已发布文章；栏目标题 /「查看全部 →」→ 分类页；页脚含「赞助（二维码弹窗）/ 留言 / 关于 / ✉ 联系」入口 + 友情链接（我的图书馆 myfami.cn / 我的日程管理工具 ics-editor）。留言板 `guestbook.html` + `assets/guestbook.js`（纯前端 localStorage，昵称随机 + 最多 50 条），关于页 `about.html`（含邮箱联系方式），样式统一在 `assets/style.css`。全站 favicon = `assets/favicon.png`（256 方形圆角、星月夜→向日葵渐变 + 月牙/星点），7 个 HTML 均已在 `<head>` 加 `<link rel="icon">`（含 html-writer 用 `../assets/favicon.png`）。
@@ -21,7 +21,7 @@
 - 写作工具 `html-writer/`（登录遮罩 → Markdown 编辑器 → 导出 / 📤发布（可归入长文分章）/ 🗂已发布管理删除 / 📚长文管理 / 📂打开文件：本地 .md/.txt 打开 + 已发布文章编辑（更新原文 / 另存为新文章））；已带 favicon（`../assets/favicon.png`）。
 - 板块静态目录 `dream/ whisper/ awake/` **当前全空**（不再用静态目录发新文）；`build.js` 仍在 build 命令里执行（输出 0 张卡片占位，无害）。
 
-**线上数据（收盘快照，会变）**：`/api/posts` → dream 0 / murmur 3 / awake 2（最新 murmur《9月5日的日记》hasMd=true；awake 2 篇为旧版无 md 文章）。增删改都在线进行（html-writer「🗂 已发布」+「📂 打开文件」+「📚 长文」）。**注意：以上为第十二轮改动前的线上状态；长文相关数据要等本次改动上线后才会出现。**
+**线上数据（2026-10-06 实测快照，会变）**：`/api/posts` → dream 0 / murmur 12 / awake 16（全部为旧版单篇文章 `type:'post'`，尚无长文 → `/api/books` 返回 `[]`）。增删改都在线进行（html-writer「🗂 已发布」+「📂 打开文件」+「📚 长文」）。
 
 **关键经验 / 坑（详见过往轮次与 architecture「易踩坑」）**
 1. `wrangler kv` CLI 在仓库含 `wrangler.toml` 时操作的是**本地模拟**；判断/清理线上 KV 请走 REST（`/accounts/{acct}/storage/kv/namespaces/{ns}/…`）。**切勿删除 KV 里名为 `PUBLISH_PASSWORD` 的键**（CF 内部使用，删了发布即坏）。
@@ -30,7 +30,7 @@
 4. 裸 REST 用 OAuth token 过期会 401；`wrangler …` 会自动刷新 token。
 5. CF Pages 会把 `/xxx.html` 308 到 `/xxx`（干净 URL）；不存在的路径会**回退首页 200**（SPA 行为）。
 
-## 第十二轮：长文（分章作品）——分章上传 + 目录页 + 上一章/下一章（2026-10-06，未提交）
+## 第十二轮：长文（分章作品）——分章上传 + 目录页 + 上一章/下一章（2026-10-06，已上线 `f453402`）
 
 需求：① html-writer 支持长文管理，可**分章上传、选择长文标题、添加新章**；② 网页端增加长文查看，点长文链接 → **目录页**，阅读页加**上一章 / 下一章**。
 
@@ -222,3 +222,4 @@
 - 2026-09-05：第四轮「发布到主页」（前端按钮/对话框/POST + functions/ 端点 + 首页动态渲染），已上线并绑定 KV 与发布密钥。
 - 2026-09-05（续 2）：第五轮「🗂 已发布」删除文章、第六轮分类管理页（瀑布流 + 全文搜索）、第七轮删除本地 awake 静态文章，全部上线验证；并写入「项目当前状态快照」。HEAD = `2228997`。
 - 2026-09-06：第八轮「📂 打开文件」（本地 md/txt + 编辑已发布文章：更新原文/另存为）、第九轮站点页脚扩展（赞助弹窗/留言板/关于/联系）、第十轮全站页脚友情链接（我的图书馆 / 我的日程管理工具）、第十一轮全站 favicon（方形圆角、星月夜→向日葵），全部实现、jsdom/mock 验证并推送上线；更新快照至 HEAD = `824c5a3`。
+- 2026-10-06：第十二轮「长文（分章作品）」——html-writer 分章上传/长文管理、站点目录页 `book.html`、阅读页服务端注入「上一章/目录/下一章」、新增 `/api/books` 与 `/api/book`；用内存 KV + 自建 DOM 桩（本机装不上 jsdom）跑出 63/63 + 77/77，提交 `f453402` 推送后 CF Pages 自动构建上线（`/book`、`/assets/book.js|css`、`/api/books`、`/api/book` 线上实测 200/404 正常）。
