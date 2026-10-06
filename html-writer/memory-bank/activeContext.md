@@ -14,7 +14,7 @@
 - HEAD：`f453402`（**长文分章发布：目录页 + 上一章/下一章**；此前本日历史：`6493df6` memory-bank 存档、`824c5a3` favicon、`800f87b` 页脚友情链接、`896c7dc` 页脚扩展/赞助/留言板/关于、`7020e33` 打开文件+编辑已发布文章）。**Pages 构建已自动完成**（无需手工 wrangler deploy）。
 
 **代码布局（仓库根）**
-- 首页 `index.html` + `assets/style.css` + `assets/main.js`：静态卡片由 build.js 生成；每栏动态显示**最新 2 篇**已发布文章；栏目标题 /「查看全部 →」→ 分类页；页脚含「赞助（二维码弹窗）/ 留言 / 关于 / ✉ 联系」入口 + 友情链接（我的图书馆 myfami.cn / 我的日程管理工具 ics-editor）。留言板 `guestbook.html` + `assets/guestbook.js`（纯前端 localStorage，昵称随机 + 最多 50 条），关于页 `about.html`（含邮箱联系方式），样式统一在 `assets/style.css`。全站 favicon = `assets/favicon.png`（256 方形圆角、星月夜→向日葵渐变 + 月牙/星点），7 个 HTML 均已在 `<head>` 加 `<link rel="icon">`（含 html-writer 用 `../assets/favicon.png`）。
+- 首页 `index.html` + `assets/style.css` + `assets/main.js`：静态卡片由 build.js 生成；每栏动态显示**最新 2 篇**已发布文章；栏目标题 /「查看全部 →」→ 分类页；页脚含「赞助（二维码弹窗）/ 留言 / 关于 / ✉ 联系」入口 + 友情链接（我的图书馆 `https://myfami.cn/` / 我的日程管理工具 `https://ics.myfami.cn/` / 我的学习卡片 `https://cards.myfami.cn/`）。留言板 `guestbook.html` + `assets/guestbook.js`（纯前端 localStorage，昵称随机 + 最多 50 条），关于页 `about.html`（含邮箱联系方式），样式统一在 `assets/style.css`。全站 favicon = `assets/favicon.png`（256 方形圆角、星月夜→向日葵渐变 + 月牙/星点），页面均已在 `<head>` 加 `<link rel="icon">`（含 html-writer 用 `../assets/favicon.png`）。
 - 分类管理页 `dream.html / murmur.html / awake.html` + `assets/category.css|js`：每分类一页，CSS 多列瀑布流 + 顶部搜索框（标题 + 正文全文本地过滤）；长文卡片额外显示「长文 · 共 N 章」标记并跳目录页。
 - 长文目录页 `book.html` + `assets/book.css|js`：`/book?slug=…`，书名 + 分类·章数·更新时间 +「从第一章开始」+ 章节列表（第 N 章 · 标题 → 阅读页）。
 - API：`functions/api/{challenge,publish,posts,post,books,book}.js` + 共用鉴权 `functions/_shared/auth.js` + 长文共用逻辑 `functions/_shared/books.js`。
@@ -29,6 +29,15 @@
 3. Pages Functions 的绑定 / 密钥在**构建时快照**：改完必须再部署一次（空 commit 即可）才生效。
 4. 裸 REST 用 OAuth token 过期会 401；`wrangler …` 会自动刷新 token。
 5. CF Pages 会把 `/xxx.html` 308 到 `/xxx`（干净 URL）；不存在的路径会**回退首页 200**（SPA 行为）。
+
+## 第十三轮：页脚友情链接更新（2026-10-06）
+
+需求：①「我的日程管理工具」链接改为 `ics.myfami.cn`；② 新增一条「我的学习卡片」`cards.myfami.cn`。
+
+1. **范围 = 7 个公开页面**（`index.html / dream.html / murmur.html / awake.html / guestbook.html / about.html / book.html`——比第十轮多出第十二轮新增的长文目录页）：把原 `https://ics-editor.zhang409543901.workers.dev/` 换成 `https://ics.myfami.cn/`，并在其后追加 `<a class="friend-link" href="https://cards.myfami.cn/" target="_blank" rel="noopener">我的学习卡片</a>`。
+2. **样式零改动**：`.friend-links / .friend-link`（`assets/style.css`、`assets/category.css`）本来就是 `flex-wrap` 居中，3 条自动换行适配移动端。
+3. **细节**：域名一律补 `https://` + 结尾 `/`（与既有 `https://myfami.cn/` 写法一致），保持外链 `target="_blank" rel="noopener"`。
+4. **验证**：7 页各 3 条 `.friend-link` 且 URL 一致、无 `ics-editor` 残留；python `HTMLParser` 检查 7 页标签全部配平；`curl -L` 三个外站均 `200`（myfami.cn / ics.myfami.cn / cards.myfami.cn）。
 
 ## 第十二轮：长文（分章作品）——分章上传 + 目录页 + 上一章/下一章（2026-10-06，已上线 `f453402`）
 
@@ -223,3 +232,4 @@
 - 2026-09-05（续 2）：第五轮「🗂 已发布」删除文章、第六轮分类管理页（瀑布流 + 全文搜索）、第七轮删除本地 awake 静态文章，全部上线验证；并写入「项目当前状态快照」。HEAD = `2228997`。
 - 2026-09-06：第八轮「📂 打开文件」（本地 md/txt + 编辑已发布文章：更新原文/另存为）、第九轮站点页脚扩展（赞助弹窗/留言板/关于/联系）、第十轮全站页脚友情链接（我的图书馆 / 我的日程管理工具）、第十一轮全站 favicon（方形圆角、星月夜→向日葵），全部实现、jsdom/mock 验证并推送上线；更新快照至 HEAD = `824c5a3`。
 - 2026-10-06：第十二轮「长文（分章作品）」——html-writer 分章上传/长文管理、站点目录页 `book.html`、阅读页服务端注入「上一章/目录/下一章」、新增 `/api/books` 与 `/api/book`；用内存 KV + 自建 DOM 桩（本机装不上 jsdom）跑出 63/63 + 77/77，提交 `f453402` 推送后 CF Pages 自动构建上线（`/book`、`/assets/book.js|css`、`/api/books`、`/api/book` 线上实测 200/404 正常）。
+- 2026-10-06（续）：第十三轮「页脚友情链接更新」——7 个页面把「我的日程管理工具」换成 `https://ics.myfami.cn/` 并新增「我的学习卡片」`https://cards.myfami.cn/`（样式零改动，flex-wrap 自动换行）；验证 7 页各 3 条链接、HTML 标签配平、三个外站 200。
